@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#173f5f" />
     <title>SI-FAS | SMK YASBAM Kota Bogor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
         --blue: #173f5f;
@@ -14,6 +20,7 @@
         --muted: #637381;
         --yellow: #f2b134;
         --line: #d8e2e5;
+        --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
       }
 
       * {
@@ -33,7 +40,23 @@
           var(--blue-light) 100%
         );
         color: var(--ink);
-        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        font-family: var(--font-sans);
+      }
+
+      .demo-badge {
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        z-index: 999;
+        padding: 6px 14px;
+        border-radius: 99px;
+        background: #f2b134;
+        color: #173f5f;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        box-shadow: 0 10px 22px rgba(23, 63, 95, 0.15);
       }
 
       .welcome {
@@ -137,6 +160,7 @@
     </style>
   </head>
   <body>
+    <div class="demo-badge">SIMULASI</div>
     <main class="welcome">
       <img
         class="logo"
