@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SI-FAS | Reset Riwayat</title>
+    <style>
+      :root {
+        --navy: #12334d;
+        --blue: #246a8a;
+        --paper: #f4f7f7;
+        --ink: #193242;
+        --muted: #6c7d86;
+        --line: #d9e3e5;
+        --red: #b3414a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: linear-gradient(145deg, var(--navy), #0c2940 58%, #3b8c91);
+        color: var(--ink);
+        font: 14px/1.5 "Trebuchet MS", "Segoe UI", sans-serif;
+      }
+
+      .card {
+        width: min(500px, 100%);
+        padding: 34px;
+        background: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 14px;
+        box-shadow: 0 24px 60px rgba(5, 25, 40, 0.25);
+      }
+
+      .eyebrow {
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 8px 0 10px;
+        color: var(--navy);
+        font-size: 30px;
+      }
+
+      p {
+        margin: 0 0 24px;
+        color: var(--muted);
+      }
+
+      .warning {
+        margin-bottom: 20px;
+        padding: 14px;
+        border: 1px solid #f0c8cc;
+        border-radius: 8px;
+        background: #fff5f5;
+        color: var(--red);
+      }
+
+      .actions {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+      }
+
+      button,
+      a {
+        display: inline-block;
+        border: 0;
+        border-radius: 8px;
+        padding: 11px 15px;
+        font: inherit;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .danger {
+        background: var(--red);
+        color: #fff;
+      }
+
+      .secondary {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .status {
+        min-height: 22px;
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 520px) {
+        .card {
+          padding: 26px 20px;
+        }
+
+        .actions > * {
+          width: 100%;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="eyebrow">Administrasi lokal</div>
+      <h1>Reset riwayat laporan</h1>
+      <p>
+        Gunakan halaman ini setelah selesai presentasi untuk menghapus seluruh
+        laporan yang tersimpan pada browser ini.
+      </p>
+      <div class="warning">
+        Tindakan ini tidak dapat dibatalkan. Data akun tidak akan dihapus.
+      </div>
+      <div class="actions">
+        <button class="danger" id="resetReports">Hapus seluruh riwayat</button>
+        <a class="secondary" href="index.html">Kembali ke aplikasi</a>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </main>
+    <script>
+      (() => {
+        const ADMIN_ROLE = "Admin";
+        const SESSION_KEY = "sifas_session";
+        const REPORTS_KEY = "sifas_reports";
+        const accountId = sessionStorage.getItem(SESSION_KEY);
+        const accounts = JSON.parse(localStorage.getItem("sifas_accounts") || "[]");
+        const account = accounts.find((item) => item.id === accountId);
+
+        if (!account || account.role !== ADMIN_ROLE) {
+          window.location.replace("index.html");
+          return;
+        }
+
+        document.querySelector("#resetReports").addEventListener("click", () => {
+          const confirmed = window.confirm(
+            "Hapus seluruh riwayat laporan pada browser ini?",
+          );
+
+          if (!confirmed) return;
+
+          localStorage.setItem(REPORTS_KEY, "[]");
+          document.querySelector("#status").textContent =
+            "Riwayat laporan berhasil dihapus.";
+        });
+      })();
+    </script>
+  </body>
+</html>
