@@ -896,6 +896,9 @@
         function accounts() {
           return read(K.accounts);
         }
+        function normalizedUsername(value) {
+          return String(value || "").trim().toLocaleLowerCase();
+        }
         function reports() {
           return read(K.reports);
         }
@@ -1236,7 +1239,19 @@
                 const list = accounts(),
                   x = list.find((y) => y.id === i.dataset.name);
                 if (x) {
-                  x.username = i.value.trim() || x.username;
+                  const username = i.value.trim() || x.username;
+                  if (
+                    list.some(
+                      (y) =>
+                        y.id !== x.id &&
+                        normalizedUsername(y.username) === normalizedUsername(username),
+                    )
+                  ) {
+                    i.value = x.username;
+                    toast("Nama akun sudah digunakan.");
+                    return;
+                  }
+                  x.username = username;
                   save(K.accounts, list);
                   toast("Nama akun diperbarui.");
                 }
@@ -1310,6 +1325,7 @@
             e.preventDefault();
             const list = accounts(),
               role = $("#newRole").value,
+              username = $("#newName").value.trim(),
               used = list.map((x) => Number(String(x.id).slice(-4)) || 0),
               slot =
                 role === "Admin"
@@ -1317,6 +1333,14 @@
                       (n) => !list.some((x) => x.adminSlot === n),
                     )
                   : null;
+              if (
+                list.some(
+                  (x) => normalizedUsername(x.username) === normalizedUsername(username),
+                )
+              ) {
+                toast("Nama akun sudah digunakan.");
+                return;
+              }
             if (role === "Admin" && !slot) {
               toast("Slot Admin 2 sampai 5 sudah penuh.");
               return;
@@ -1324,7 +1348,7 @@
             const next = role === "Admin" ? slot : Math.max(9, ...used, 10) + 1;
             list.push({
               id: idFor(next),
-              username: $("#newName").value.trim(),
+              username,
               password: $("#newPassword").value,
               role,
               adminSlot: role === "Admin" ? slot : null,
