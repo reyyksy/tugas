@@ -1221,7 +1221,7 @@
             role === "USER" ? USER_ROLES.includes(x.role) : x.role === role,
           );
           if (route === "admins") list = list.filter((x) => x.adminSlot);
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Administrasi</div><h1>${route === "users" ? "Kelola User" : route === "staff" ? "Kelola Petugas" : "Kelola Admin"}</h1><p>Kelola akun dan akses aplikasi secara terpusat.</p></div><div class="hero-actions">${route !== "admins" || list.length < 5 ? '<button class="primary" id="openAccount">+ Tambah akun</button>' : ""}</div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>ID internal</th><th>Nama akun</th><th>Role</th><th>Password</th><th>Aksi</th></tr></thead><tbody>${list.map((x) => `<tr><td>${esc(x.id)}</td><td><input data-name="${esc(x.id)}" value="${esc(x.username)}"></td><td>${esc(x.role)}</td><td><input type="password" data-password="${esc(x.id)}" placeholder="Ubah password"></td><td>${x.adminSlot === 1 ? "admin" : `<button class="danger" data-delete="${esc(x.id)}">Hapus</button>`}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty">Belum ada akun.</div></td></tr>'}</tbody></table></div></section>`;
+          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Administrasi</div><h1>${route === "users" ? "Kelola User" : route === "staff" ? "Kelola Petugas" : "Kelola Admin"}</h1><p>Kelola akun dan akses aplikasi secara terpusat.</p></div><div class="hero-actions">${route !== "admins" || list.length < 5 ? '<button class="primary" id="openAccount">+ Tambah akun</button>' : ""}</div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>ID internal</th><th>Nama akun</th><th>Role</th><th>Password</th><th>Aksi</th></tr></thead><tbody>${list.map((x) => `<tr><td>${a.role === "Admin" ? `<input data-id="${esc(x.id)}" value="${esc(x.id)}" inputmode="numeric" maxlength="20">` : esc(x.id)}</td><td><input data-name="${esc(x.id)}" value="${esc(x.username)}"></td><td>${esc(x.role)}</td><td><input type="password" data-password="${esc(x.id)}" placeholder="Ubah password"></td><td>${x.adminSlot === 1 ? "admin" : `<button class="danger" data-delete="${esc(x.id)}">Hapus</button>`}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty">Belum ada akun.</div></td></tr>'}</tbody></table></div></section>`;
         }
         function openDetail(r, a) {
           $("#modalTitle").textContent = "Detail laporan";
@@ -1246,6 +1246,10 @@
             timeItem.innerHTML = `<small>${label}</small><strong>${label === "Petugas terakhir" ? esc(timestamp) : fullDate(timestamp)}</strong>`;
             detailGrid.append(timeItem);
           });
+          const timeline = $("#modalBody").querySelector(".timeline");
+          if (timeline) {
+            timeline.innerHTML = (r.statusHistory || [{ status: r.status, timestamp: r.updatedAt || r.createdAt, actor: r.updatedBy }]).map((h) => `<div><strong>${esc(h.status)}</strong><small>${h.actor ? `Oleh ${esc(h.actor)} · ` : ""}${fullDate(h.timestamp)}</small></div>`).join("");
+          }
           if (r.completionPhoto) {
             const proofItem = document.createElement("div");
             proofItem.className = "detail-item detail-full";
@@ -1297,6 +1301,7 @@
             item.adminNote = $("#editNote").value.trim();
             item.updatedAt = t;
             item.updatedBy = a.username;
+            item.updatedById = a.id;
             if (next === "Selesai") {
               item.completedAt = item.completedAt || t;
               item.completionPhoto = completionPhoto;
@@ -1397,6 +1402,39 @@
                 }
               }),
           );
+          if (a.role === "Admin") {
+            document.querySelectorAll("[data-id]").forEach((i) => {
+              i.onchange = () => {
+                const list = accounts();
+                const account = list.find((x) => x.id === i.dataset.id);
+                const nextId = i.value.trim();
+                if (!account) return;
+                if (!/^\d+$/.test(nextId) || Number(nextId) < 1) {
+                  i.value = account.id;
+                  toast("ID user harus berupa angka positif.");
+                  return;
+                }
+                if (list.some((x) => x.id === nextId && x !== account)) {
+                  i.value = account.id;
+                  toast("ID user sudah digunakan akun lain.");
+                  return;
+                }
+                const oldId = account.id;
+                account.id = nextId;
+                save(K.accounts, list);
+                save(K.reports, reports().map((report) => ({
+                  ...report,
+                  ownerId: report.ownerId === oldId ? nextId : report.ownerId,
+                  reporterId: report.reporterId === oldId ? nextId : report.reporterId,
+                })));
+                if (sessionStorage.getItem(K.session) === oldId) {
+                  sessionStorage.setItem(K.session, nextId);
+                }
+                routeView(route, accounts().find((x) => x.id === sessionStorage.getItem(K.session)) || a);
+                toast("ID user diperbarui.");
+              };
+            });
+          }
           document.querySelectorAll("[data-password]").forEach(
             (i) =>
               (i.onchange = () => {
