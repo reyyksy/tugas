@@ -315,6 +315,23 @@
         margin: 0;
         max-width: 640px;
       }
+        .report-photo {
+          display: block;
+          width: min(100%, 520px);
+          max-height: 320px;
+          object-fit: contain;
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          background: var(--paper);
+        }
+      .card-photo {
+        width: 72px;
+        height: 52px;
+        object-fit: cover;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        margin-top: 8px;
+      }
       .hero-actions {
         display: flex;
         gap: 8px;
@@ -470,7 +487,7 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 16px;
       }
-      .profile-item small {
+              `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small>
         display: block;
         color: var(--muted);
         font-size: 11px;
@@ -870,11 +887,22 @@
             .toLowerCase()
             .replace(/[^a-z]+/g, "-");
         const iso = () => new Date().toISOString();
+        function readImage(file) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error("Gagal membaca foto."));
+            reader.readAsDataURL(file);
+          });
+        }
         const date = (v) =>
           new Intl.DateTimeFormat("id-ID", {
             day: "2-digit",
             month: "short",
             year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
           }).format(new Date(v));
         const fullDate = (v) =>
           new Intl.DateTimeFormat("id-ID", {
@@ -883,6 +911,7 @@
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            second: "2-digit",
           }).format(new Date(v));
         function read(key, fallback = []) {
           try {
@@ -911,8 +940,7 @@
           );
         }
         function idFor(n) {
-          const d = new Date();
-          return `${String(d.getFullYear()).slice(-2)}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}${String(n).padStart(4, "0")}`;
+          return String(n);
         }
         function seed() {
           if (localStorage.getItem(K.version) !== "4") {
@@ -926,14 +954,14 @@
                 active: true,
               },
               {
-                id: idFor(10),
+                id: idFor(6),
                 username: "Muhamad Reihan Kaissya",
                 password: "reihan",
                 role: "Siswa",
                 active: true,
               },
               {
-                id: idFor(11),
+                id: idFor(7),
                 username: "M. Alfian Yusup",
                 password: "alfian",
                 role: "Guru",
@@ -1126,10 +1154,13 @@
           return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Ringkasan fasilitas sekolah</div><h1>Selamat datang, ${esc(a.username)}.</h1><p>Pantau kondisi fasilitas dan tindak lanjut laporan dari satu ruang kerja.</p></div>${a.role !== "Admin" && a.role !== "Petugas" ? '<div class="hero-actions"><button class="primary" data-route-action="create">+ Buat laporan</button></div>' : ""}</div><div class="stats"><div class="stat"><span>Total laporan</span><strong>${rs.length}</strong></div><div class="stat"><span>Menunggu</span><strong>${count("Menunggu")}</strong></div><div class="stat"><span>Diproses</span><strong>${count("Diproses")}</strong></div><div class="stat"><span>Selesai</span><strong>${count("Selesai")}</strong></div></div><div class="panel"><h2>Ringkasan fasilitas sekolah</h2><p style="margin:0;color:var(--muted)">${rs.length ? `${rs.length} laporan tercatat pada perangkat ini.` : "Belum ada laporan fasilitas yang tercatat."} Gunakan menu laporan untuk melihat detail dan tindak lanjut.</p></div></section>`;
         }
         function card(r) {
-          return `<article class="report-card"><div class="report-main"><strong>${esc(r.facilityName)}</strong><small>${esc(r.id)} · ${esc(r.location)}</small></div><div class="meta"><small>Kategori</small>${esc(r.category)}</div><div class="meta"><small>Tanggal</small>${date(r.createdAt)}</div><div class="meta"><small>Urgensi</small><strong>${esc(r.urgency || "-")}</strong></div><div class="meta"><small>Status</small><span class="${statusClass(r.status)}">${esc(r.status)}</span></div><button class="ghost" data-detail="${esc(r.id)}">Detail</button></article>`;
+          const proof = r.completionPhoto
+            ? `<img class="card-photo" src="${esc(r.completionPhoto)}" alt="Foto bukti petugas">`
+            : "";
+          return `<article class="report-card"><div class="report-main"><strong>${esc(r.facilityName)}</strong><small>${esc(r.id)} · ${esc(r.location)}</small>${proof}</div><div class="meta"><small>Kategori</small>${esc(r.category)}</div><div class="meta"><small>Tanggal</small>${date(r.createdAt)}</div><div class="meta"><small>Urgensi</small><strong>${esc(r.urgency || "-")}</strong></div><div class="meta"><small>Status</small><span class="${statusClass(r.status)}">${esc(r.status)}</span></div><button class="ghost" data-detail="${esc(r.id)}">Detail</button></article>`;
         }
-        function createView() {
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pelaporan fasilitas</div><h1>Buat laporan baru.</h1><p>Lengkapi informasi fasilitas yang perlu diperiksa.</p></div></div><form id="reportForm" class="panel"><div class="form-grid"><div class="field"><label>Kategori fasilitas</label><select id="category" required><option value="">Pilih kategori</option><option>Kursi</option><option>Meja</option><option>Lampu</option><option>Proyektor</option><option>Komputer</option><option>AC</option><option>Pintu</option><option>Jendela</option><option>Toilet</option><option>Jaringan/Internet</option><option>Lainnya</option></select></div><div class="field"><label>Nama fasilitas</label><input id="facility" required placeholder="Contoh: Proyektor Lab TKJ"></div><div class="field"><label>Lokasi</label><input id="location" required placeholder="Contoh: Gedung A"></div><div class="field"><label>Ruangan</label><input id="room" required placeholder="Contoh: Lab TKJ"></div><div class="field full"><label>Deskripsi kerusakan</label><textarea id="description" required placeholder="Jelaskan kondisi kerusakan secara singkat dan jelas"></textarea></div><div class="field"><label>Tingkat urgensi</label><select id="urgency" required><option value="">Pilih urgensi</option><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></div></div><div class="modal-actions"><button type="reset" class="ghost">Bersihkan</button><button class="primary">Kirim laporan</button></div></form></section>`;
+          function createView() {
+            return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pelaporan fasilitas</div><h1>Buat laporan baru.</h1><p>Lengkapi informasi fasilitas yang perlu diperiksa.</p></div></div><form id="reportForm" class="panel"><div class="form-grid"><div class="field"><label>Kategori fasilitas</label><select id="category" required><option value="">Pilih kategori</option><option>Kursi</option><option>Meja</option><option>Lampu</option><option>Proyektor</option><option>Komputer</option><option>AC</option><option>Pintu</option><option>Jendela</option><option>Toilet</option><option>Jaringan/Internet</option><option>Lainnya</option></select></div><div class="field"><label>Nama fasilitas</label><input id="facility" required placeholder="Contoh: Proyektor Lab TKJ"></div><div class="field"><label>Lokasi</label><input id="location" required placeholder="Contoh: Gedung A"></div><div class="field"><label>Ruangan</label><input id="room" required placeholder="Contoh: Lab TKJ"></div><div class="field full"><label>Deskripsi kerusakan</label><textarea id="description" required placeholder="Jelaskan kondisi kerusakan secara singkat dan jelas"></textarea></div><div class="field"><label>Tingkat urgensi</label><select id="urgency" required><option value="">Pilih urgensi</option><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></div><div class="field"><label for="photo">Foto kerusakan (opsional)</label><input id="photo" type="file" accept="image/*"></div></div><div class="modal-actions"><button type="reset" class="ghost">Bersihkan</button><button class="primary">Kirim laporan</button></div></form></section>`;
         }
         function listView(a, mode) {
           let rs = reports();
@@ -1167,17 +1198,79 @@
           $("#modalBody").innerHTML =
             `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small><strong>${esc(r.id)}</strong></div><div class="detail-item"><small>Dibuat</small><strong>${fullDate(r.createdAt)}</strong></div><div class="detail-item"><small>Pelapor</small><strong>${esc(r.reporterName || "Tidak tersedia")} (${esc(r.reporterType || "- ")})</strong></div><div class="detail-item"><small>Status</small><strong><span class="${statusClass(r.status)}">${esc(r.status)}</span></strong></div><div class="detail-item"><small>Fasilitas</small><strong>${esc(r.facilityName)}</strong></div><div class="detail-item"><small>Lokasi</small><strong>${esc(r.location)} · ${esc(r.room)}</strong></div><div class="detail-item"><small>Tingkat urgensi</small><strong>${esc(r.urgency || "Tidak ditentukan")}</strong></div><div class="detail-item detail-full"><small>Deskripsi</small><strong>${esc(r.description)}</strong></div>${r.adminNote ? `<div class="detail-item detail-full"><small>Catatan penanganan</small><strong>${esc(r.adminNote)}</strong></div>` : ""}</div>${a.role === "Admin" || a.role === "Petugas" ? `<div class="panel" style="margin:22px 0 0"><div class="field"><label>Status laporan</label><select id="editStatus">${STATUSES.map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field" style="margin-top:12px"><label>Catatan penanganan</label><textarea id="editNote">${esc(r.adminNote || "")}</textarea></div><div class="modal-actions"><button class="primary" id="saveReport">Simpan perubahan</button></div></div>` : ""}<h3>Riwayat status</h3><div class="timeline">${(r.statusHistory || [{ status: r.status, timestamp: r.updatedAt || r.createdAt }]).map((h) => `<div><strong>${esc(h.status)}</strong><small>${fullDate(h.timestamp)}</small></div>`).join("")}</div>`;
           $("#modal").classList.add("open");
-          $("#saveReport")?.addEventListener("click", () => {
+          if (r.photo) {
+            const photoItem = document.createElement("div");
+            photoItem.className = "detail-item detail-full";
+            photoItem.innerHTML = `<small>Foto kerusakan</small><a href="${esc(r.photo)}" target="_blank" rel="noopener"><img class="report-photo" src="${esc(r.photo)}" alt="Foto kerusakan ${esc(r.facilityName)}"></a>`;
+            $("#modalBody").querySelector(".detail-grid").append(photoItem);
+          }
+          const detailGrid = $("#modalBody").querySelector(".detail-grid");
+          [
+            ["Waktu laporan", r.createdAt],
+            ["Pembaruan terakhir", r.updatedAt || r.createdAt],
+            ...(r.completedAt ? [["Waktu selesai", r.completedAt]] : []),
+            ...(r.updatedBy ? [["Petugas terakhir", r.updatedBy]] : []),
+          ].forEach(([label, timestamp]) => {
+            const timeItem = document.createElement("div");
+            timeItem.className = "detail-item";
+            timeItem.innerHTML = `<small>${label}</small><strong>${label === "Petugas terakhir" ? esc(timestamp) : fullDate(timestamp)}</strong>`;
+            detailGrid.append(timeItem);
+          });
+          if (r.completionPhoto) {
+            const proofItem = document.createElement("div");
+            proofItem.className = "detail-item detail-full";
+            proofItem.innerHTML = `<small>Foto bukti petugas</small><a href="${esc(r.completionPhoto)}" target="_blank" rel="noopener"><img class="report-photo" src="${esc(r.completionPhoto)}" alt="Foto bukti perbaikan ${esc(r.facilityName)}"></a>`;
+            detailGrid.append(proofItem);
+          }
+          if ((a.role === "Admin" || a.role === "Petugas") && $("#editNote")) {
+            const proofField = document.createElement("div");
+            proofField.className = "field";
+            proofField.style.marginTop = "12px";
+            proofField.innerHTML = '<label for="completionPhoto">Foto bukti petugas (wajib saat selesai)</label><input id="completionPhoto" type="file" accept="image/*">';
+            $("#editNote").parentElement.after(proofField);
+          }
+          $("#saveReport")?.addEventListener("click", async () => {
             const list = reports(),
               item = list.find((x) => x.id === r.id),
               next = $("#editStatus").value,
               t = iso();
+            const file = $("#completionPhoto")?.files[0];
+            if (file && !file.type.startsWith("image/")) {
+              toast("File bukti harus berupa gambar.");
+              return;
+            }
+            if (file && file.size > 3 * 1024 * 1024) {
+              toast("Ukuran foto bukti maksimal 3 MB.");
+              return;
+            }
+            if (next === "Selesai" && !item.completionPhoto && !file) {
+              toast("Foto bukti petugas wajib diisi saat laporan selesai.");
+              return;
+            }
+            let completionPhoto = item.completionPhoto || "";
+            if (file) {
+              try {
+                completionPhoto = await readImage(file);
+              } catch (error) {
+                toast(error.message);
+                return;
+              }
+            }
             if (next !== item.status) {
               item.status = next;
-              (item.statusHistory ||= []).push({ status: next, timestamp: t });
+              (item.statusHistory ||= []).push({
+                status: next,
+                timestamp: t,
+                actor: a.username,
+              });
             }
             item.adminNote = $("#editNote").value.trim();
             item.updatedAt = t;
+            item.updatedBy = a.username;
+            if (next === "Selesai") {
+              item.completedAt = item.completedAt || t;
+              item.completionPhoto = completionPhoto;
+            }
             save(K.reports, list);
             $("#modal").classList.remove("open");
             toast("Perubahan laporan tersimpan.");
@@ -1188,8 +1281,24 @@
           $("[data-route-action]")?.addEventListener("click", (e) =>
             navigate(e.target.dataset.routeAction),
           );
-          $("#reportForm")?.addEventListener("submit", (e) => {
+          $("#reportForm")?.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const file = $("#photo").files[0];
+            if (file && !file.type.startsWith("image/")) {
+              toast("File yang dipilih harus berupa gambar.");
+              return;
+            }
+            if (file && file.size > 3 * 1024 * 1024) {
+              toast("Ukuran foto maksimal 3 MB.");
+              return;
+            }
+            let photo = "";
+            try {
+              if (file) photo = await readImage(file);
+            } catch (error) {
+              toast(error.message);
+              return;
+            }
             const t = iso();
             const list = reports();
             list.push({
@@ -1203,6 +1312,7 @@
               location: $("#location").value.trim(),
               room: $("#room").value.trim(),
               description: $("#description").value.trim(),
+              photo,
               urgency: $("#urgency").value,
               status: "Menunggu",
               createdAt: t,
@@ -1326,7 +1436,6 @@
             const list = accounts(),
               role = $("#newRole").value,
               username = $("#newName").value.trim(),
-              used = list.map((x) => Number(String(x.id).slice(-4)) || 0),
               slot =
                 role === "Admin"
                   ? [2, 3, 4, 5].find(
@@ -1345,7 +1454,10 @@
               toast("Slot Admin 2 sampai 5 sudah penuh.");
               return;
             }
-            const next = role === "Admin" ? slot : Math.max(9, ...used, 10) + 1;
+            const clientIds = list
+              .map((x) => Number(x.id))
+              .filter((id) => Number.isInteger(id) && id >= 6 && id < 100000);
+            const next = role === "Admin" ? slot : Math.max(5, ...clientIds) + 1;
             list.push({
               id: idFor(next),
               username,
