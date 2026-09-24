@@ -860,6 +860,7 @@
           reports: "sifas_reports",
           session: "sifas_session",
           version: "sifas_single_version",
+          accountIdFormat: "sifas_account_id_format",
         };
         const STATUSES = [
           "Menunggu",
@@ -940,7 +941,11 @@
           );
         }
         function idFor(n) {
-          return String(n);
+          const d = new Date();
+          const day = String(d.getDate()).padStart(2, "0");
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const year = String(d.getFullYear()).slice(-2);
+          return `${day}${month}${year}${String(n).padStart(4, "0")}`;
         }
         function seed() {
           if (localStorage.getItem(K.version) !== "4") {
@@ -973,6 +978,30 @@
             sessionStorage.removeItem(K.session);
           }
         }
+        function migrateAccountIds() {
+          if (localStorage.getItem(K.accountIdFormat) === "DDMMYY-4") return;
+          const list = accounts();
+          const changes = new Map();
+          const migrated = list.map((account) => {
+            const suffix = Number(String(account.id).slice(-4));
+            if (!Number.isInteger(suffix) || suffix < 1) return account;
+            const nextId = idFor(suffix);
+            changes.set(account.id, nextId);
+            return { ...account, id: nextId };
+          });
+          save(K.accounts, migrated);
+          const updatedReports = reports().map((report) => ({
+            ...report,
+            ownerId: changes.get(report.ownerId) || report.ownerId,
+            reporterId: changes.get(report.reporterId) || report.reporterId,
+          }));
+          save(K.reports, updatedReports);
+          const sessionId = sessionStorage.getItem(K.session);
+          if (changes.has(sessionId)) {
+            sessionStorage.setItem(K.session, changes.get(sessionId));
+          }
+          localStorage.setItem(K.accountIdFormat, "DDMMYY-4");
+        }
         function toast(message) {
           const n = $("#toast");
           n.textContent = message;
@@ -983,6 +1012,7 @@
             3000,
           );
         }
+          migrateAccountIds();
         function owner(r) {
           return r.ownerId || r.reporterId || "";
         }
@@ -1455,7 +1485,7 @@
               return;
             }
             const clientIds = list
-              .map((x) => Number(x.id))
+              .map((x) => Number(String(x.id).slice(-4)))
               .filter((id) => Number.isInteger(id) && id >= 6 && id < 100000);
             const next = role === "Admin" ? slot : Math.max(5, ...clientIds) + 1;
             list.push({
