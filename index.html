@@ -70,6 +70,7 @@
         border-radius: 16px;
         padding: 38px;
         box-shadow: 0 26px 70px rgba(0, 0, 0, 0.22);
+        text-align: center;
       }
       .login-logo {
         width: 72px;
@@ -78,9 +79,6 @@
         border-radius: 12px;
         display: block;
         margin: 0 auto 22px;
-      }
-      .login-card {
-        text-align: center;
       }
       .eyebrow {
         color: var(--blue);
@@ -137,8 +135,7 @@
       }
       .primary,
       .ghost,
-      .danger,
-      .text-btn {
+      .danger {
         border: 0;
         border-radius: 8px;
         padding: 10px 14px;
@@ -164,10 +161,6 @@
       .danger {
         background: var(--red);
         color: #fff;
-      }
-      .text-btn {
-        background: transparent;
-        color: var(--blue);
       }
       .app {
         display: flex;
@@ -382,19 +375,6 @@
         display: block;
         margin-top: 3px;
       }
-      .section-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 0 0 13px;
-      }
-      .section-head h2 {
-        font-size: 19px;
-        margin: 0;
-      }
-      .section-head small {
-        color: var(--muted);
-      }
       .report-list {
         display: grid;
         gap: 10px;
@@ -487,7 +467,7 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 16px;
       }
-              `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small>
+      .profile-item small {
         display: block;
         color: var(--muted);
         font-size: 11px;
@@ -499,7 +479,7 @@
       }
       .toolbar {
         display: grid;
-        grid-template-columns: minmax(220px, 2fr) repeat(2, 1fr) auto;
+        grid-template-columns: minmax(180px, 1.8fr) repeat(3, minmax(110px, 1fr)) auto auto;
         gap: 9px;
         padding: 14px;
         background: #fff;
@@ -785,6 +765,36 @@
           width: 100%;
         }
       }
+      @media print {
+        body {
+          background: #fff !important;
+          color: #000 !important;
+        }
+        .sidebar,
+        .topbar,
+        .toolbar,
+        .hero-actions,
+        .modal,
+        .toast,
+        .login-page,
+        button {
+          display: none !important;
+        }
+        .app,
+        .main,
+        .content,
+        .view {
+          display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+        }
+        .report-card {
+          border: 1px solid #ccc !important;
+          break-inside: avoid;
+          margin-bottom: 10px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -870,6 +880,20 @@
           "Ditolak",
         ];
         const USER_ROLES = ["Siswa", "Guru", "Staf/Lainnya"];
+        const CATEGORIES = [
+          "Kursi",
+          "Meja",
+          "Lampu",
+          "Proyektor",
+          "Komputer",
+          "AC",
+          "Pintu",
+          "Jendela",
+          "Toilet",
+          "Jaringan/Internet",
+          "Lainnya",
+        ];
+        const URGENCIES = ["Rendah", "Sedang", "Tinggi"];
         const $ = (s) => document.querySelector(s);
         const esc = (v) =>
           String(v ?? "").replace(
@@ -891,7 +915,31 @@
         function readImage(file) {
           return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
+            reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                const maxDim = 800;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                  if (w > h) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                  } else {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                  }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL("image/jpeg", 0.7));
+              };
+              img.onerror = () => reject(new Error("Gagal memproses gambar."));
+              img.src = e.target.result;
+            };
             reader.onerror = () => reject(new Error("Gagal membaca foto."));
             reader.readAsDataURL(file);
           });
@@ -933,7 +981,13 @@
           return read(K.reports);
         }
         function save(key, value) {
-          localStorage.setItem(key, JSON.stringify(value));
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+          } catch {
+            toast("Penyimpanan browser penuh. Hapus riwayat laporan lama.");
+            return false;
+          }
         }
         function current() {
           return accounts().find(
@@ -1012,7 +1066,6 @@
             3000,
           );
         }
-          migrateAccountIds();
         function owner(r) {
           return r.ownerId || r.reporterId || "";
         }
@@ -1063,15 +1116,15 @@
           $("#headerRole").textContent = a.role;
           $("#avatar").textContent = initials(a.username);
           buildNav(a);
-          route(location.hash.slice(1) || "dashboard", a);
+          routeView(location.hash.slice(1) || "dashboard", a);
         }
         function buildNav(a) {
           const nav = $("#nav");
           const items =
             a.role === "Admin"
-              ? ["dashboard", "reports", "users", "staff", "admins", "profile"]
+              ? ["dashboard", "reports", "trash", "users", "staff", "admins", "profile"]
               : a.role === "Petugas"
-                ? ["dashboard", "reports", "profile"]
+                ? ["dashboard", "reports", "trash", "profile"]
                 : ["dashboard", "create", "mine", "public", "profile"];
           const labels = {
             dashboard: "Dashboard",
@@ -1083,6 +1136,7 @@
             staff: "Kelola Petugas",
             admins: "Kelola Admin",
             profile: "Profil Akun",
+            trash: "Sampah",
           };
           const icons = {
             dashboard: "▦",
@@ -1094,6 +1148,7 @@
             staff: "♧",
             admins: "♜",
             profile: "◎",
+            trash: "🗑",
           };
           nav.innerHTML =
             items
@@ -1116,31 +1171,13 @@
           location.hash = route;
           routeView(route, current());
         }
-        function route(route, a) {
-          $("#crumb").textContent =
-            {
-              dashboard: "Dashboard",
-              create: "Buat Laporan",
-              mine: "Laporan Saya",
-              public: "Laporan Sekolah",
-              reports: "Laporan Masuk",
-              users: "Kelola User",
-              staff: "Kelola Petugas",
-              admins: "Kelola Admin",
-              profile: "Profil Akun",
-            }[route] || "Dashboard";
-          $("#nav [data-route].active")?.classList.remove("active");
-          $(`#nav [data-route="${route}"]`)?.classList.add("active");
-          $("#content").innerHTML = "";
-          return routeView(route, a);
-        }
         function routeView(route, a) {
           if (!a) return;
           const allowed =
             a.role === "Admin"
-              ? ["dashboard", "reports", "users", "staff", "admins", "profile"]
+              ? ["dashboard", "reports", "trash", "users", "staff", "admins", "profile"]
               : a.role === "Petugas"
-                ? ["dashboard", "reports", "profile"]
+                ? ["dashboard", "reports", "trash", "profile"]
                 : ["dashboard", "create", "mine", "public", "profile"];
           if (!allowed.includes(route)) route = "dashboard";
           route = route || "dashboard";
@@ -1154,6 +1191,7 @@
             staff: "Kelola Petugas",
             admins: "Kelola Admin",
             profile: "Profil Akun",
+            trash: "Sampah",
           }[route];
           $("#nav [data-route].active")?.classList.remove("active");
           $(`#nav [data-route="${route}"]`)?.classList.add("active");
@@ -1169,16 +1207,19 @@
                     ? listView(a, "public")
                     : route === "reports"
                       ? listView(a, "all")
-                      : route === "profile"
-                        ? profileView(a)
-                        : accountsView(a, route);
+                      : route === "trash"
+                        ? trashView(a)
+                        : route === "profile"
+                          ? profileView(a)
+                          : accountsView(a, route);
           bindView(route, a);
           return route;
         }
         function dashboard(a) {
           const rs = reports().filter(
             (r) =>
-              a.role === "Admin" || a.role === "Petugas" || owner(r) === a.id,
+              !r.archived &&
+              (a.role === "Admin" || a.role === "Petugas" || owner(r) === a.id),
           );
           const count = (s) => rs.filter((r) => r.status === s).length;
           return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Ringkasan fasilitas sekolah</div><h1>Selamat datang, ${esc(a.username)}.</h1><p>Pantau kondisi fasilitas dan tindak lanjut laporan dari satu ruang kerja.</p></div>${a.role !== "Admin" && a.role !== "Petugas" ? '<div class="hero-actions"><button class="primary" data-route-action="create">+ Buat laporan</button></div>' : ""}</div><div class="stats"><div class="stat"><span>Total laporan</span><strong>${rs.length}</strong></div><div class="stat"><span>Menunggu</span><strong>${count("Menunggu")}</strong></div><div class="stat"><span>Diproses</span><strong>${count("Diproses")}</strong></div><div class="stat"><span>Selesai</span><strong>${count("Selesai")}</strong></div></div><div class="panel"><h2>Ringkasan fasilitas sekolah</h2><p style="margin:0;color:var(--muted)">${rs.length ? `${rs.length} laporan tercatat pada perangkat ini.` : "Belum ada laporan fasilitas yang tercatat."} Gunakan menu laporan untuk melihat detail dan tindak lanjut.</p></div></section>`;
@@ -1190,13 +1231,13 @@
           return `<article class="report-card"><div class="report-main"><strong>${esc(r.facilityName)}</strong><small>${esc(r.id)} · ${esc(r.location)}</small>${proof}</div><div class="meta"><small>Kategori</small>${esc(r.category)}</div><div class="meta"><small>Tanggal</small>${date(r.createdAt)}</div><div class="meta"><small>Urgensi</small><strong>${esc(r.urgency || "-")}</strong></div><div class="meta"><small>Status</small><span class="${statusClass(r.status)}">${esc(r.status)}</span></div><button class="ghost" data-detail="${esc(r.id)}">Detail</button></article>`;
         }
           function createView() {
-            return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pelaporan fasilitas</div><h1>Buat laporan baru.</h1><p>Lengkapi informasi fasilitas yang perlu diperiksa.</p></div></div><form id="reportForm" class="panel"><div class="form-grid"><div class="field"><label>Kategori fasilitas</label><select id="category" required><option value="">Pilih kategori</option><option>Kursi</option><option>Meja</option><option>Lampu</option><option>Proyektor</option><option>Komputer</option><option>AC</option><option>Pintu</option><option>Jendela</option><option>Toilet</option><option>Jaringan/Internet</option><option>Lainnya</option></select></div><div class="field"><label>Nama fasilitas</label><input id="facility" required placeholder="Contoh: Proyektor Lab TKJ"></div><div class="field"><label>Lokasi</label><input id="location" required placeholder="Contoh: Gedung A"></div><div class="field"><label>Ruangan</label><input id="room" required placeholder="Contoh: Lab TKJ"></div><div class="field full"><label>Deskripsi kerusakan</label><textarea id="description" required placeholder="Jelaskan kondisi kerusakan secara singkat dan jelas"></textarea></div><div class="field"><label>Tingkat urgensi</label><select id="urgency" required><option value="">Pilih urgensi</option><option>Rendah</option><option>Sedang</option><option>Tinggi</option></select></div><div class="field"><label for="photo">Foto kerusakan (opsional)</label><input id="photo" type="file" accept="image/*"></div></div><div class="modal-actions"><button type="reset" class="ghost">Bersihkan</button><button class="primary">Kirim laporan</button></div></form></section>`;
+            return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pelaporan fasilitas</div><h1>Buat laporan baru.</h1><p>Lengkapi informasi fasilitas yang perlu diperiksa.</p></div></div><form id="reportForm" class="panel"><div class="form-grid"><div class="field"><label>Kategori fasilitas</label><select id="category" required><option value="">Pilih kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select></div><div class="field"><label>Nama fasilitas</label><input id="facility" required placeholder="Contoh: Proyektor Lab TKJ"></div><div class="field"><label>Lokasi</label><input id="location" required placeholder="Contoh: Gedung A"></div><div class="field"><label>Ruangan</label><input id="room" required placeholder="Contoh: Lab TKJ"></div><div class="field full"><label>Deskripsi kerusakan</label><textarea id="description" required placeholder="Jelaskan kondisi kerusakan secara singkat dan jelas"></textarea></div><div class="field"><label>Tingkat urgensi</label><select id="urgency" required><option value="">Pilih urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select></div><div class="field"><label for="photo">Foto kerusakan (opsional)</label><input id="photo" type="file" accept="image/*"></div></div><div class="modal-actions"><button type="reset" class="ghost">Bersihkan</button><button class="primary">Kirim laporan</button></div></form></section>`;
         }
         function listView(a, mode) {
-          let rs = reports();
+          let rs = reports().filter((r) => !r.archived);
           if (mode === "mine") rs = rs.filter((r) => owner(r) === a.id);
           if (mode === "public") rs = rs.filter((r) => owner(r) !== a.id);
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">${mode === "mine" ? "Riwayat pribadi" : mode === "public" ? "Informasi sekolah" : "Pusat penanganan"}</div><h1>${mode === "mine" ? "Laporan Saya" : mode === "public" ? "Laporan Sekolah" : "Laporan Masuk"}</h1><p>${mode === "mine" ? "Lihat perkembangan laporan yang dibuat oleh akun Anda." : mode === "public" ? "Lihat laporan fasilitas pengguna lain tanpa mengubah datanya." : "Periksa dan tindak lanjuti seluruh laporan yang masuk."}</p></div></div><div class="toolbar"><input id="search" placeholder="Cari fasilitas, lokasi, pelapor..."><select id="filterStatus"><option value="">Semua status</option>${STATUSES.map((s) => `<option>${s}</option>`).join("")}</select><button class="ghost" id="resetFilter">Reset</button></div><div id="results" class="report-list">${renderCards(rs)}</div></section>`;
+          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">${mode === "mine" ? "Riwayat pribadi" : mode === "public" ? "Informasi sekolah" : "Pusat penanganan"}</div><h1>${mode === "mine" ? "Laporan Saya" : mode === "public" ? "Laporan Sekolah" : "Laporan Masuk"}</h1><p>${mode === "mine" ? "Lihat perkembangan laporan yang dibuat oleh akun Anda." : mode === "public" ? "Lihat laporan fasilitas pengguna lain tanpa mengubah datanya." : "Periksa dan tindak lanjuti seluruh laporan yang masuk."}</p></div></div><div class="toolbar"><input id="search" placeholder="Cari fasilitas, lokasi, pelapor..."><select id="filterStatus"><option value="">Semua status</option>${STATUSES.map((s) => `<option>${s}</option>`).join("")}</select><select id="filterCategory"><option value="">Semua kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select><select id="filterUrgency"><option value="">Semua urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select><button class="ghost" id="resetFilter">Reset</button><button class="ghost" id="printReportList" title="Cetak daftar laporan">🖨 Cetak</button></div><div id="results" class="report-list">${renderCards(rs)}</div></section>`;
         }
         function renderCards(rs) {
           return rs.length
@@ -1208,7 +1249,48 @@
             : '<div class="empty"><strong>Tidak ada laporan</strong><span>Belum ada data yang sesuai.</span></div>';
         }
         function profileView(a) {
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pengaturan akun</div><h1>Profil Akun</h1><p>Informasi akun aktif pada perangkat ini.</p></div></div><div class="panel"><h2>Informasi akun</h2><div class="profile-grid"><div class="profile-item"><small>Nama akun</small><strong>${esc(a.username)}</strong></div><div class="profile-item"><small>Jenis pengguna</small><strong>${esc(a.role)}</strong></div><div class="profile-item"><small>Status</small><strong>Aktif</strong></div></div></div></section>`;
+          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pengaturan akun</div><h1>Profil Akun</h1><p>Informasi akun aktif pada perangkat ini.</p></div></div><div class="panel"><h2>Informasi akun</h2><div class="profile-grid"><div class="profile-item"><small>Nama akun</small><strong>${esc(a.username)}</strong></div><div class="profile-item"><small>Jenis pengguna</small><strong>${esc(a.role)}</strong></div><div class="profile-item"><small>Status</small><strong>Aktif</strong></div></div></div><div class="panel" style="margin-top:20px"><h2>Cadangan Data</h2><p style="margin:0 0 16px;color:var(--muted)">Ekspor data laporan dan akun ke file JSON untuk cadangan, atau impor dari file JSON perangkat lain.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="primary" id="exportData">⬇ Ekspor Data (JSON)</button><label class="ghost" style="cursor:pointer;display:inline-flex;align-items:center;padding:10px 14px;border-radius:8px;font-weight:700">⬆ Impor Data (JSON)<input type="file" id="importData" accept=".json" style="display:none"></label></div></div></section>`;
+        }
+        function trashView(a) {
+          const rs = reports().filter((r) => r.archived);
+          const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+          const cards = rs.length
+            ? rs
+                .slice()
+                .sort((x, y) => new Date(y.deletedAt || y.createdAt) - new Date(x.deletedAt || x.createdAt))
+                .map((r) => {
+                  const remaining = r.deletedAt
+                    ? Math.max(0, Math.ceil((THIRTY_DAYS - (now - new Date(r.deletedAt).getTime())) / (24 * 60 * 60 * 1000)))
+                    : 30;
+                  const actions = a.role === "Admin"
+                    ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button class="ghost" data-restore="${esc(r.id)}">↩ Pulihkan</button>
+                        <button class="danger" data-perma-delete="${esc(r.id)}">🗑 Hapus Permanen</button>
+                       </div>`
+                    : `<span style="font-size:12px;color:var(--muted)">Hanya admin yang dapat memulihkan</span>`;
+                  return `<article class="report-card">
+                    <div class="report-main">
+                      <strong>${esc(r.facilityName)}</strong>
+                      <small>${esc(r.id)} · ${esc(r.location)}</small>
+                    </div>
+                    <div class="meta"><small>Kategori</small>${esc(r.category)}</div>
+                    <div class="meta"><small>Dihapus</small>${r.deletedAt ? date(r.deletedAt) : "-"}</div>
+                    <div class="meta"><small>Hapus otomatis</small><strong>${remaining} hari lagi</strong></div>
+                    <div class="meta"><small>Status</small><span class="${statusClass(r.status)}">${esc(r.status)}</span></div>
+                    ${actions}
+                  </article>`;
+                })
+                .join("")
+            : '<div class="empty"><strong>Sampah kosong</strong><span>Tidak ada laporan yang dihapus.</span></div>';
+          return `<section class="view active">
+            <div class="hero"><div>
+              <div class="eyebrow2">Manajemen sampah</div>
+              <h1>Sampah</h1>
+              <p>Laporan yang dihapus oleh admin/petugas. Dihapus permanen otomatis setelah 30 hari. Hanya admin yang dapat memulihkan atau menghapus permanen.</p>
+            </div></div>
+            <div id="results" class="report-list">${cards}</div>
+          </section>`;
         }
         function accountsView(a, route) {
           const role =
@@ -1224,10 +1306,14 @@
           return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Administrasi</div><h1>${route === "users" ? "Kelola User" : route === "staff" ? "Kelola Petugas" : "Kelola Admin"}</h1><p>Kelola akun dan akses aplikasi secara terpusat.</p></div><div class="hero-actions">${route !== "admins" || list.length < 5 ? '<button class="primary" id="openAccount">+ Tambah akun</button>' : ""}</div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>ID internal</th><th>Nama akun</th><th>Role</th><th>Password</th><th>Aksi</th></tr></thead><tbody>${list.map((x) => `<tr><td>${a.role === "Admin" ? `<input data-id="${esc(x.id)}" value="${esc(x.id)}" inputmode="numeric" maxlength="20">` : esc(x.id)}</td><td><input data-name="${esc(x.id)}" value="${esc(x.username)}"></td><td>${esc(x.role)}</td><td><input type="password" data-password="${esc(x.id)}" placeholder="Ubah password"></td><td>${x.adminSlot === 1 ? "admin" : `<button class="danger" data-delete="${esc(x.id)}">Hapus</button>`}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty">Belum ada akun.</div></td></tr>'}</tbody></table></div></section>`;
         }
         function openDetail(r, a) {
+          const historyHtml = (r.statusHistory || [{ status: r.status, timestamp: r.updatedAt || r.createdAt, actor: r.updatedBy }])
+            .map((h) => `<div><strong>${esc(h.status)}</strong><small>${h.actor ? `Oleh ${esc(h.actor)} · ` : ""}${fullDate(h.timestamp)}</small></div>`)
+            .join("");
           $("#modalTitle").textContent = "Detail laporan";
           $("#modalBody").innerHTML =
-            `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small><strong>${esc(r.id)}</strong></div><div class="detail-item"><small>Dibuat</small><strong>${fullDate(r.createdAt)}</strong></div><div class="detail-item"><small>Pelapor</small><strong>${esc(r.reporterName || "Tidak tersedia")} (${esc(r.reporterType || "- ")})</strong></div><div class="detail-item"><small>Status</small><strong><span class="${statusClass(r.status)}">${esc(r.status)}</span></strong></div><div class="detail-item"><small>Fasilitas</small><strong>${esc(r.facilityName)}</strong></div><div class="detail-item"><small>Lokasi</small><strong>${esc(r.location)} · ${esc(r.room)}</strong></div><div class="detail-item"><small>Tingkat urgensi</small><strong>${esc(r.urgency || "Tidak ditentukan")}</strong></div><div class="detail-item detail-full"><small>Deskripsi</small><strong>${esc(r.description)}</strong></div>${r.adminNote ? `<div class="detail-item detail-full"><small>Catatan penanganan</small><strong>${esc(r.adminNote)}</strong></div>` : ""}</div>${a.role === "Admin" || a.role === "Petugas" ? `<div class="panel" style="margin:22px 0 0"><div class="field"><label>Status laporan</label><select id="editStatus">${STATUSES.map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field" style="margin-top:12px"><label>Catatan penanganan</label><textarea id="editNote">${esc(r.adminNote || "")}</textarea></div><div class="modal-actions"><button class="primary" id="saveReport">Simpan perubahan</button></div></div>` : ""}<h3>Riwayat status</h3><div class="timeline">${(r.statusHistory || [{ status: r.status, timestamp: r.updatedAt || r.createdAt }]).map((h) => `<div><strong>${esc(h.status)}</strong><small>${fullDate(h.timestamp)}</small></div>`).join("")}</div>`;
+            `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small><strong>${esc(r.id)}</strong></div><div class="detail-item"><small>Dibuat</small><strong>${fullDate(r.createdAt)}</strong></div><div class="detail-item"><small>Pelapor</small><strong>${esc(r.reporterName || "Tidak tersedia")} (${esc(r.reporterType || "- ")})</strong></div><div class="detail-item"><small>Status</small><strong><span class="${statusClass(r.status)}">${esc(r.status)}</span></strong></div><div class="detail-item"><small>Fasilitas</small><strong>${esc(r.facilityName)}</strong></div><div class="detail-item"><small>Lokasi</small><strong>${esc(r.location)} · ${esc(r.room)}</strong></div><div class="detail-item"><small>Tingkat urgensi</small><strong>${esc(r.urgency || "Tidak ditentukan")}</strong></div><div class="detail-item detail-full"><small>Deskripsi</small><strong>${esc(r.description)}</strong></div>${r.adminNote ? `<div class="detail-item detail-full"><small>Catatan penanganan</small><strong>${esc(r.adminNote)}</strong></div>` : ""}</div>${a.role === "Admin" || a.role === "Petugas" ? `<div class="panel" style="margin:22px 0 0"><div class="field"><label>Status laporan</label><select id="editStatus">${STATUSES.map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field" style="margin-top:12px"><label>Catatan penanganan</label><textarea id="editNote">${esc(r.adminNote || "")}</textarea></div><div class="modal-actions"><button class="primary" id="saveReport">Simpan perubahan</button></div></div>` : ""}<h3>Riwayat status</h3><div class="timeline">${historyHtml}</div><div class="modal-actions" style="margin-top:18px"><button type="button" class="ghost" id="printDetailBtn">🖨 Cetak Laporan Ini</button></div>`;
           $("#modal").classList.add("open");
+          $("#printDetailBtn")?.addEventListener("click", () => window.print());
           if (r.photo) {
             const photoItem = document.createElement("div");
             photoItem.className = "detail-item detail-full";
@@ -1246,10 +1332,6 @@
             timeItem.innerHTML = `<small>${label}</small><strong>${label === "Petugas terakhir" ? esc(timestamp) : fullDate(timestamp)}</strong>`;
             detailGrid.append(timeItem);
           });
-          const timeline = $("#modalBody").querySelector(".timeline");
-          if (timeline) {
-            timeline.innerHTML = (r.statusHistory || [{ status: r.status, timestamp: r.updatedAt || r.createdAt, actor: r.updatedBy }]).map((h) => `<div><strong>${esc(h.status)}</strong><small>${h.actor ? `Oleh ${esc(h.actor)} · ` : ""}${fullDate(h.timestamp)}</small></div>`).join("");
-          }
           if (r.completionPhoto) {
             const proofItem = document.createElement("div");
             proofItem.className = "detail-item detail-full";
@@ -1262,7 +1344,31 @@
             proofField.style.marginTop = "12px";
             proofField.innerHTML = '<label for="completionPhoto">Foto bukti petugas (wajib saat selesai)</label><input id="completionPhoto" type="file" accept="image/*">';
             $("#editNote").parentElement.after(proofField);
+            // Add "Hapus ke Sampah" button in the modal-actions area
+            if (!r.archived) {
+              const archiveBtn = document.createElement("button");
+              archiveBtn.type = "button";
+              archiveBtn.className = "danger";
+              archiveBtn.id = "archiveReportBtn";
+              archiveBtn.textContent = "🗑 Hapus ke Sampah";
+              archiveBtn.style.marginRight = "auto";
+              const modalActionsEl = $("#modalBody").querySelector(".modal-actions");
+              if (modalActionsEl) modalActionsEl.prepend(archiveBtn);
+            }
           }
+          $("#archiveReportBtn")?.addEventListener("click", () => {
+            if (!window.confirm("Hapus laporan ini ke Sampah? Akan dihapus permanen otomatis setelah 30 hari.")) return;
+            const list = reports();
+            const item = list.find((x) => x.id === r.id);
+            if (item) {
+              item.archived = true;
+              item.deletedAt = iso();
+              save(K.reports, list);
+              $("#modal").classList.remove("open");
+              toast("Laporan dipindahkan ke Sampah.");
+              routeView(location.hash.slice(1) || "dashboard", a);
+            }
+          });
           $("#saveReport")?.addEventListener("click", async () => {
             const list = reports(),
               item = list.find((x) => x.id === r.id),
@@ -1353,6 +1459,8 @@
               createdAt: t,
               updatedAt: t,
               adminNote: "",
+              archived: false,
+              deletedAt: null,
               statusHistory: [{ status: "Menunggu", timestamp: t }],
             });
             save(K.reports, list);
@@ -1366,10 +1474,62 @@
           $("#filterStatus")?.addEventListener("input", () =>
             filterList(a, route),
           );
+          $("#filterCategory")?.addEventListener("input", () =>
+            filterList(a, route),
+          );
+          $("#filterUrgency")?.addEventListener("input", () =>
+            filterList(a, route),
+          );
           $("#resetFilter")?.addEventListener("click", () => {
             $("#search").value = "";
             $("#filterStatus").value = "";
+            if ($("#filterCategory")) $("#filterCategory").value = "";
+            if ($("#filterUrgency")) $("#filterUrgency").value = "";
             filterList(a, route);
+          });
+          $("#printReportList")?.addEventListener("click", () => {
+            window.print();
+          });
+          $("#exportData")?.addEventListener("click", () => {
+            const backup = {
+              accounts: accounts(),
+              reports: reports(),
+              exportedAt: iso(),
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], {
+              type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `sifas-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            toast("Data berhasil diekspor.");
+          });
+          $("#importData")?.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              try {
+                const data = JSON.parse(evt.target.result);
+                if (!Array.isArray(data.accounts) || !Array.isArray(data.reports)) {
+                  toast("Format file backup tidak valid.");
+                  return;
+                }
+                if (!window.confirm("Impor data akan menimpa data akun dan laporan pada browser ini. Lanjutkan?")) {
+                  return;
+                }
+                save(K.accounts, data.accounts);
+                save(K.reports, data.reports);
+                toast("Data berhasil diimpor.");
+                showApp();
+              } catch {
+                toast("Gagal membaca file backup.");
+              }
+            };
+            reader.readAsText(file);
           });
           document.querySelectorAll("[data-detail]").forEach(
             (b) =>
@@ -1378,6 +1538,31 @@
                 if (r) openDetail(r, a);
               }),
           );
+          // Trash view: restore
+          document.querySelectorAll("[data-restore]").forEach((b) => {
+            b.onclick = () => {
+              const list = reports();
+              const item = list.find((x) => x.id === b.dataset.restore);
+              if (item) {
+                item.archived = false;
+                item.deletedAt = null;
+                save(K.reports, list);
+                toast("Laporan berhasil dipulihkan.");
+                routeView("trash", a);
+              }
+            };
+          });
+          // Trash view: permanent delete (admin only)
+          if (a.role === "Admin") {
+            document.querySelectorAll("[data-perma-delete]").forEach((b) => {
+              b.onclick = () => {
+                if (!window.confirm("Hapus laporan ini secara permanen? Tindakan ini tidak dapat dibatalkan.")) return;
+                save(K.reports, reports().filter((x) => x.id !== b.dataset.permaDelete));
+                toast("Laporan dihapus permanen.");
+                routeView("trash", a);
+              };
+            });
+          }
           document.querySelectorAll("[data-name]").forEach(
             (i) =>
               (i.onchange = () => {
@@ -1463,10 +1648,14 @@
         }
         function filterList(a, route) {
           let rs = reports();
+          // normal views exclude archived; trash view shows only archived
+          if (route !== "trash") rs = rs.filter((r) => !r.archived);
           if (route === "mine") rs = rs.filter((r) => owner(r) === a.id);
           if (route === "public") rs = rs.filter((r) => owner(r) !== a.id);
           const q = $("#search").value.toLowerCase(),
-            s = $("#filterStatus").value;
+            s = $("#filterStatus").value,
+            c = $("#filterCategory")?.value,
+            u = $("#filterUrgency")?.value;
           rs = rs
             .filter(
               (r) =>
@@ -1482,7 +1671,9 @@
                     .includes(q),
                 ),
             )
-            .filter((r) => !s || r.status === s);
+            .filter((r) => !s || r.status === s)
+            .filter((r) => !c || r.category === c)
+            .filter((r) => !u || r.urgency === u);
           $("#results").innerHTML = renderCards(rs);
           document.querySelectorAll("[data-detail]").forEach(
             (b) =>
@@ -1549,6 +1740,22 @@
           if (a) routeView(location.hash.slice(1) || "dashboard", a);
         });
         seed();
+        migrateAccountIds();
+        // Auto-purge archived reports older than 30 days
+        (function purgeOldArchives() {
+          const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+          const original = reports();
+          const cleaned = original.filter((r) => {
+            if (r.archived && r.deletedAt) {
+              return now - new Date(r.deletedAt).getTime() <= THIRTY_DAYS;
+            }
+            return true;
+          });
+          if (cleaned.length !== original.length) {
+            save(K.reports, cleaned);
+          }
+        })();
         login();
       })();
     </script>

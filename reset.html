@@ -138,7 +138,12 @@
         const SESSION_KEY = "sifas_session";
         const REPORTS_KEY = "sifas_reports";
         const accountId = sessionStorage.getItem(SESSION_KEY);
-        const accounts = JSON.parse(localStorage.getItem("sifas_accounts") || "[]");
+        let accounts = [];
+        try {
+          accounts = JSON.parse(localStorage.getItem("sifas_accounts") || "[]");
+        } catch {
+          accounts = [];
+        }
         const account = accounts.find((item) => item.id === accountId);
 
         if (!account || account.role !== ADMIN_ROLE) {
