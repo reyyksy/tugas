@@ -4,8 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SI-FAS | Sistem Informasi Fasilitas</title>
-    <!-- Library SheetJS untuk Export Excel -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
       :root {
         --navy: #12334d;
@@ -137,8 +135,7 @@
       }
       .primary,
       .ghost,
-      .danger,
-      .success {
+      .danger {
         border: 0;
         border-radius: 8px;
         padding: 10px 14px;
@@ -151,13 +148,6 @@
       }
       .primary:hover {
         background: #0b273d;
-      }
-      .success {
-        background: var(--green);
-        color: #fff;
-      }
-      .success:hover {
-        background: #1b6949;
       }
       .ghost {
         background: #fff;
@@ -318,15 +308,15 @@
         margin: 0;
         max-width: 640px;
       }
-      .report-photo {
-        display: block;
-        width: min(100%, 520px);
-        max-height: 320px;
-        object-fit: contain;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--paper);
-      }
+        .report-photo {
+          display: block;
+          width: min(100%, 520px);
+          max-height: 320px;
+          object-fit: contain;
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          background: var(--paper);
+        }
       .card-photo {
         width: 72px;
         height: 52px;
@@ -489,7 +479,7 @@
       }
       .toolbar {
         display: grid;
-        grid-template-columns: minmax(180px, 1.8fr) repeat(3, minmax(110px, 1fr)) auto auto auto;
+        grid-template-columns: minmax(180px, 1.8fr) repeat(3, minmax(110px, 1fr)) auto auto;
         gap: 9px;
         padding: 14px;
         background: #fff;
@@ -634,13 +624,6 @@
       .toast.show {
         opacity: 1;
         transform: none;
-      }
-      .preview-box {
-        background: #f8fbfb;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 16px;
       }
       @media (max-width: 1050px) {
         .sidebar {
@@ -827,12 +810,12 @@
         <p>SMK YASBAM KOTA BOGOR</p>
         <form id="loginForm" class="login-form">
           <div class="field">
-            <label for="loginName">Nama akun</label>
-            <input id="loginName" autocomplete="username" required />
+            <label for="loginName">Nama akun</label
+            ><input id="loginName" autocomplete="username" required />
           </div>
           <div class="field">
-            <label for="loginPassword">Password</label>
-            <input
+            <label for="loginPassword">Password</label
+            ><input
               id="loginPassword"
               type="password"
               autocomplete="current-password"
@@ -880,14 +863,13 @@
       </div>
     </div>
     <div id="toast" class="toast"></div>
-
     <script>
       (() => {
         const K = {
           accounts: "sifas_accounts",
           reports: "sifas_reports",
           session: "sifas_session",
-          version: "sifas_single_version_v5",
+          version: "sifas_single_version",
           accountIdFormat: "sifas_account_id_format",
         };
         const STATUSES = [
@@ -912,12 +894,6 @@
           "Lainnya",
         ];
         const URGENCIES = ["Rendah", "Sedang", "Tinggi"];
-
-        // Jurusan, Tingkat, & Rombel (A-Z)
-        const JURUSAN_LIST = ["TJKT", "TO", "MPLB"];
-        const TINGKAT_LIST = ["10", "11", "12"];
-        const ROMBEL_LIST = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
-
         const $ = (s) => document.querySelector(s);
         const esc = (v) =>
           String(v ?? "").replace(
@@ -936,7 +912,6 @@
             .toLowerCase()
             .replace(/[^a-z]+/g, "-");
         const iso = () => new Date().toISOString();
-
         function readImage(file) {
           return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -969,7 +944,6 @@
             reader.readAsDataURL(file);
           });
         }
-
         const date = (v) =>
           new Intl.DateTimeFormat("id-ID", {
             day: "2-digit",
@@ -979,7 +953,6 @@
             minute: "2-digit",
             second: "2-digit",
           }).format(new Date(v));
-
         const fullDate = (v) =>
           new Intl.DateTimeFormat("id-ID", {
             day: "2-digit",
@@ -989,7 +962,6 @@
             minute: "2-digit",
             second: "2-digit",
           }).format(new Date(v));
-
         function read(key, fallback = []) {
           try {
             return JSON.parse(
@@ -999,19 +971,15 @@
             return fallback;
           }
         }
-
         function accounts() {
           return read(K.accounts);
         }
-
         function normalizedUsername(value) {
           return String(value || "").trim().toLocaleLowerCase();
         }
-
         function reports() {
           return read(K.reports);
         }
-
         function save(key, value) {
           try {
             localStorage.setItem(key, JSON.stringify(value));
@@ -1021,13 +989,11 @@
             return false;
           }
         }
-
         function current() {
           return accounts().find(
             (a) => a.id === sessionStorage.getItem(K.session),
           );
         }
-
         function idFor(n) {
           const d = new Date();
           const day = String(d.getDate()).padStart(2, "0");
@@ -1035,9 +1001,8 @@
           const year = String(d.getFullYear()).slice(-2);
           return `${day}${month}${year}${String(n).padStart(4, "0")}`;
         }
-
         function seed() {
-          if (localStorage.getItem(K.version) !== "5") {
+          if (localStorage.getItem(K.version) !== "4") {
             save(K.accounts, [
               {
                 id: idFor(1),
@@ -1052,7 +1017,6 @@
                 username: "Muhamad Reihan Kaissya",
                 password: "reihan",
                 role: "Siswa",
-                kelas: "11 TJKT A",
                 active: true,
               },
               {
@@ -1064,11 +1028,10 @@
               },
             ]);
             save(K.reports, []);
-            localStorage.setItem(K.version, "5");
+            localStorage.setItem(K.version, "4");
             sessionStorage.removeItem(K.session);
           }
         }
-
         function migrateAccountIds() {
           if (localStorage.getItem(K.accountIdFormat) === "DDMMYY-4") return;
           const list = accounts();
@@ -1093,7 +1056,6 @@
           }
           localStorage.setItem(K.accountIdFormat, "DDMMYY-4");
         }
-
         function toast(message) {
           const n = $("#toast");
           n.textContent = message;
@@ -1104,15 +1066,12 @@
             3000,
           );
         }
-
         function owner(r) {
           return r.ownerId || r.reporterId || "";
         }
-
         function statusClass(s) {
           return `badge s-${slug(s)}`;
         }
-
         function initials(name) {
           return name
             .split(" ")
@@ -1121,7 +1080,6 @@
             .join("")
             .toUpperCase();
         }
-
         function login() {
           if (current()) {
             showApp();
@@ -1145,7 +1103,6 @@
             showApp();
           };
         }
-
         function showApp() {
           const a = current();
           if (!a) {
@@ -1161,7 +1118,6 @@
           buildNav(a);
           routeView(location.hash.slice(1) || "dashboard", a);
         }
-
         function buildNav(a) {
           const nav = $("#nav");
           const items =
@@ -1211,12 +1167,10 @@
             showApp();
           };
         }
-
         function navigate(route) {
           location.hash = route;
           routeView(route, current());
         }
-
         function routeView(route, a) {
           if (!a) return;
           const allowed =
@@ -1261,7 +1215,6 @@
           bindView(route, a);
           return route;
         }
-
         function dashboard(a) {
           const rs = reports().filter(
             (r) =>
@@ -1271,25 +1224,21 @@
           const count = (s) => rs.filter((r) => r.status === s).length;
           return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Ringkasan fasilitas sekolah</div><h1>Selamat datang, ${esc(a.username)}.</h1><p>Pantau kondisi fasilitas dan tindak lanjut laporan dari satu ruang kerja.</p></div>${a.role !== "Admin" && a.role !== "Petugas" ? '<div class="hero-actions"><button class="primary" data-route-action="create">+ Buat laporan</button></div>' : ""}</div><div class="stats"><div class="stat"><span>Total laporan</span><strong>${rs.length}</strong></div><div class="stat"><span>Menunggu</span><strong>${count("Menunggu")}</strong></div><div class="stat"><span>Diproses</span><strong>${count("Diproses")}</strong></div><div class="stat"><span>Selesai</span><strong>${count("Selesai")}</strong></div></div><div class="panel"><h2>Ringkasan fasilitas sekolah</h2><p style="margin:0;color:var(--muted)">${rs.length ? `${rs.length} laporan tercatat pada perangkat ini.` : "Belum ada laporan fasilitas yang tercatat."} Gunakan menu laporan untuk melihat detail dan tindak lanjut.</p></div></section>`;
         }
-
         function card(r) {
           const proof = r.completionPhoto
             ? `<img class="card-photo" src="${esc(r.completionPhoto)}" alt="Foto bukti petugas">`
             : "";
           return `<article class="report-card"><div class="report-main"><strong>${esc(r.facilityName)}</strong><small>${esc(r.id)} · ${esc(r.location)}</small>${proof}</div><div class="meta"><small>Kategori</small>${esc(r.category)}</div><div class="meta"><small>Tanggal</small>${date(r.createdAt)}</div><div class="meta"><small>Urgensi</small><strong>${esc(r.urgency || "-")}</strong></div><div class="meta"><small>Status</small><span class="${statusClass(r.status)}">${esc(r.status)}</span></div><button class="ghost" data-detail="${esc(r.id)}">Detail</button></article>`;
         }
-
-        function createView() {
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pelaporan fasilitas</div><h1>Buat laporan baru.</h1><p>Lengkapi informasi fasilitas yang perlu diperiksa.</p></div></div><form id="reportForm" class="panel"><div class="form-grid"><div class="field"><label>Kategori fasilitas</label><select id="category" required><option value="">Pilih kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select></div><div class="field"><label>Nama fasilitas</label><input id="facility" required placeholder="Contoh: Proyektor Lab TKJ"></div><div class="field"><label>Lokasi</label><input id="location" required placeholder="Contoh: Gedung A"></div><div class="field"><label>Ruangan</label><input id="room" required placeholder="Contoh: Lab TKJ"></div><div class="field full"><label>Deskripsi kerusakan</label><textarea id="description" required placeholder="Jelaskan kondisi kerusakan secara singkat dan jelas"></textarea></div><div class="field"><label>Tingkat urgensi</label><select id="urgency" required><option value="">Pilih urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select></div><div class="field"><label for="photo">Foto kerusakan (opsional)</label><input id="photo" type="file" accept="image/*"></div></div><div class="modal-actions"><button type="reset" class="ghost">Bersihkan</button><button class="primary">Kirim laporan</button></div></form></section>`;
+          function createView() {
+            return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pelaporan fasilitas</div><h1>Buat laporan baru.</h1><p>Lengkapi informasi fasilitas yang perlu diperiksa.</p></div></div><form id="reportForm" class="panel"><div class="form-grid"><div class="field"><label>Kategori fasilitas</label><select id="category" required><option value="">Pilih kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select></div><div class="field"><label>Nama fasilitas</label><input id="facility" required placeholder="Contoh: Proyektor Lab TKJ"></div><div class="field"><label>Lokasi</label><input id="location" required placeholder="Contoh: Gedung A"></div><div class="field"><label>Ruangan</label><input id="room" required placeholder="Contoh: Lab TKJ"></div><div class="field full"><label>Deskripsi kerusakan</label><textarea id="description" required placeholder="Jelaskan kondisi kerusakan secara singkat dan jelas"></textarea></div><div class="field"><label>Tingkat urgensi</label><select id="urgency" required><option value="">Pilih urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select></div><div class="field"><label for="photo">Foto kerusakan (opsional)</label><input id="photo" type="file" accept="image/*"></div></div><div class="modal-actions"><button type="reset" class="ghost">Bersihkan</button><button class="primary">Kirim laporan</button></div></form></section>`;
         }
-
         function listView(a, mode) {
           let rs = reports().filter((r) => !r.archived);
           if (mode === "mine") rs = rs.filter((r) => owner(r) === a.id);
           if (mode === "public") rs = rs.filter((r) => owner(r) !== a.id);
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">${mode === "mine" ? "Riwayat pribadi" : mode === "public" ? "Informasi sekolah" : "Pusat penanganan"}</div><h1>${mode === "mine" ? "Laporan Saya" : mode === "public" ? "Laporan Sekolah" : "Laporan Masuk"}</h1><p>${mode === "mine" ? "Lihat perkembangan laporan yang dibuat oleh akun Anda." : mode === "public" ? "Lihat laporan fasilitas pengguna lain tanpa mengubah datanya." : "Periksa dan tindak lanjuti seluruh laporan yang masuk."}</p></div></div><div class="toolbar"><input id="search" placeholder="Cari fasilitas, lokasi, pelapor..."><select id="filterStatus"><option value="">Semua status</option>${STATUSES.map((s) => `<option>${s}</option>`).join("")}</select><select id="filterCategory"><option value="">Semua kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select><select id="filterUrgency"><option value="">Semua urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select><button class="ghost" id="resetFilter">Reset</button><button class="ghost" id="printReportList" title="Cetak daftar laporan">🖨 Cetak</button><button class="success" id="exportExcelReportList" title="Export Laporan ke Excel">📊 Export Excel</button></div><div id="results" class="report-list">${renderCards(rs)}</div></section>`;
+          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">${mode === "mine" ? "Riwayat pribadi" : mode === "public" ? "Informasi sekolah" : "Pusat penanganan"}</div><h1>${mode === "mine" ? "Laporan Saya" : mode === "public" ? "Laporan Sekolah" : "Laporan Masuk"}</h1><p>${mode === "mine" ? "Lihat perkembangan laporan yang dibuat oleh akun Anda." : mode === "public" ? "Lihat laporan fasilitas pengguna lain tanpa mengubah datanya." : "Periksa dan tindak lanjuti seluruh laporan yang masuk."}</p></div></div><div class="toolbar"><input id="search" placeholder="Cari fasilitas, lokasi, pelapor..."><select id="filterStatus"><option value="">Semua status</option>${STATUSES.map((s) => `<option>${s}</option>`).join("")}</select><select id="filterCategory"><option value="">Semua kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select><select id="filterUrgency"><option value="">Semua urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select><button class="ghost" id="resetFilter">Reset</button><button class="ghost" id="printReportList" title="Cetak daftar laporan">🖨 Cetak</button></div><div id="results" class="report-list">${renderCards(rs)}</div></section>`;
         }
-
         function renderCards(rs) {
           return rs.length
             ? rs
@@ -1299,11 +1248,9 @@
                 .join("")
             : '<div class="empty"><strong>Tidak ada laporan</strong><span>Belum ada data yang sesuai.</span></div>';
         }
-
         function profileView(a) {
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pengaturan akun</div><h1>Profil Akun</h1><p>Informasi akun aktif pada perangkat ini.</p></div></div><div class="panel"><h2>Informasi akun</h2><div class="profile-grid"><div class="profile-item"><small>Nama akun</small><strong>${esc(a.username)}</strong></div><div class="profile-item"><small>Jenis pengguna</small><strong>${esc(a.role)}</strong></div>${a.kelas ? `<div class="profile-item"><small>Kelas</small><strong>${esc(a.kelas)}</strong></div>` : ""}<div class="profile-item"><small>Status</small><strong>Aktif</strong></div></div></div><div class="panel" style="margin-top:20px"><h2>Cadangan Data</h2><p style="margin:0 0 16px;color:var(--muted)">Ekspor data laporan dan akun ke file JSON untuk cadangan, atau impor dari file JSON perangkat lain.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="primary" id="exportData">⬇ Ekspor Data (JSON)</button><label class="ghost" style="cursor:pointer;display:inline-flex;align-items:center;padding:10px 14px;border-radius:8px;font-weight:700">⬆ Impor Data (JSON)<input type="file" id="importData" accept=".json" style="display:none"></label></div></div></section>`;
+          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Pengaturan akun</div><h1>Profil Akun</h1><p>Informasi akun aktif pada perangkat ini.</p></div></div><div class="panel"><h2>Informasi akun</h2><div class="profile-grid"><div class="profile-item"><small>Nama akun</small><strong>${esc(a.username)}</strong></div><div class="profile-item"><small>Jenis pengguna</small><strong>${esc(a.role)}</strong></div><div class="profile-item"><small>Status</small><strong>Aktif</strong></div></div></div><div class="panel" style="margin-top:20px"><h2>Cadangan Data</h2><p style="margin:0 0 16px;color:var(--muted)">Ekspor data laporan dan akun ke file JSON untuk cadangan, atau impor dari file JSON perangkat lain.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="primary" id="exportData">⬇ Ekspor Data (JSON)</button><label class="ghost" style="cursor:pointer;display:inline-flex;align-items:center;padding:10px 14px;border-radius:8px;font-weight:700">⬆ Impor Data (JSON)<input type="file" id="importData" accept=".json" style="display:none"></label></div></div></section>`;
         }
-
         function trashView(a) {
           const rs = reports().filter((r) => r.archived);
           const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
@@ -1345,8 +1292,6 @@
             <div id="results" class="report-list">${cards}</div>
           </section>`;
         }
-
-        // Tampilan Pengelolaan User / Petugas / Admin
         function accountsView(a, route) {
           const role =
             route === "users"
@@ -1358,206 +1303,15 @@
             role === "USER" ? USER_ROLES.includes(x.role) : x.role === role,
           );
           if (route === "admins") list = list.filter((x) => x.adminSlot);
-
-          return `<section class="view active">
-            <div class="hero">
-              <div>
-                <div class="eyebrow2">Administrasi</div>
-                <h1>${route === "users" ? "Kelola User" : route === "staff" ? "Kelola Petugas" : "Kelola Admin"}</h1>
-                <p>Kelola akun dan akses aplikasi secara terpusat. Pilih user untuk melihat preview dan mengedit data.</p>
-              </div>
-              <div class="hero-actions">
-                ${route !== "admins" || list.length < 5 ? '<button class="primary" id="openAccount">+ Tambah akun</button>' : ""}
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>ID Internal</th>
-                    <th>Nama Akun</th>
-                    <th>Role</th>
-                    <th>Kelas</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${list.map((x) => `
-                    <tr>
-                      <td><strong>${esc(x.id)}</strong></td>
-                      <td>${esc(x.username)}</td>
-                      <td><span class="badge ${x.role === 'Admin' ? 's-terverifikasi' : x.role === 'Petugas' ? 's-diproses' : 's-menunggu'}">${esc(x.role)}</span></td>
-                      <td>${esc(x.kelas || "-")}</td>
-                      <td>
-                        <div style="display:flex;gap:6px">
-                          <button class="ghost" data-manage-user="${esc(x.id)}">👁 Detail / Edit</button>
-                          ${x.adminSlot === 1 ? '<span style="font-size:11px;color:var(--muted)">[ Utama ]</span>' : `<button class="danger" data-delete="${esc(x.id)}">Hapus</button>`}
-                        </div>
-                      </td>
-                    </tr>
-                  `).join("") || '<tr><td colspan="5"><div class="empty">Belum ada akun.</div></td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </section>`;
+          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Administrasi</div><h1>${route === "users" ? "Kelola User" : route === "staff" ? "Kelola Petugas" : "Kelola Admin"}</h1><p>Kelola akun dan akses aplikasi secara terpusat.</p></div><div class="hero-actions">${route !== "admins" || list.length < 5 ? '<button class="primary" id="openAccount">+ Tambah akun</button>' : ""}</div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>ID internal</th><th>Nama akun</th><th>Role</th><th>Password</th><th>Aksi</th></tr></thead><tbody>${list.map((x) => `<tr><td>${a.role === "Admin" ? `<input data-id="${esc(x.id)}" value="${esc(x.id)}" inputmode="numeric" maxlength="20">` : esc(x.id)}</td><td><input data-name="${esc(x.id)}" value="${esc(x.username)}"></td><td>${esc(x.role)}</td><td><input type="password" data-password="${esc(x.id)}" placeholder="Ubah password"></td><td>${x.adminSlot === 1 ? "admin" : `<button class="danger" data-delete="${esc(x.id)}">Hapus</button>`}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty">Belum ada akun.</div></td></tr>'}</tbody></table></div></section>`;
         }
-
-        // Modal Preview & Edit User
-        function openUserManageModal(userId, currentUser, route) {
-          const list = accounts();
-          const targetUser = list.find((x) => x.id === userId);
-          if (!targetUser) return;
-
-          const parts = (targetUser.kelas || "10 TJKT A").split(" ");
-          const initTingkat = parts[0] || "10";
-          const initJurusan = parts[1] || "TJKT";
-          const initRombel = parts[2] || "A";
-
-          $("#modalTitle").textContent = "Kelola Akun User";
-          $("#modalBody").innerHTML = `
-            <!-- MODE 1: PREVIEW READ-ONLY -->
-            <div id="userPreviewCard" class="preview-box">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <h3 style="margin:0;color:var(--navy)">Preview Data User</h3>
-                <button class="primary" id="btnEnableEdit" style="background:var(--gold);color:#000">✏️ Edit Data</button>
-              </div>
-              <div class="detail-grid">
-                <div class="detail-item"><small>User ID Internal</small><strong>${esc(targetUser.id)}</strong></div>
-                <div class="detail-item"><small>Nama Akun</small><strong>${esc(targetUser.username)}</strong></div>
-                <div class="detail-item"><small>Role Pengguna</small><strong>${esc(targetUser.role)}</strong></div>
-                <div class="detail-item"><small>Kelas / Jurusan</small><strong>${esc(targetUser.kelas || "-")}</strong></div>
-              </div>
-            </div>
-
-            <!-- MODE 2: FORM EDIT (Disembunyikan saat awal) -->
-            <form id="userEditForm" class="form-grid hidden" style="border-top:2px dashed var(--line);padding-top:16px">
-              <h3 class="full" style="margin:0 0 8px;color:var(--orange)">Form Edit Data</h3>
-              
-              <div class="field">
-                <label>User ID Internal</label>
-                <input id="editUserIdVal" value="${esc(targetUser.id)}" ${currentUser.role !== 'Admin' ? 'readonly' : ''} required>
-              </div>
-
-              <div class="field">
-                <label>Nama Akun / Username</label>
-                <input id="editUserNameVal" value="${esc(targetUser.username)}" required>
-              </div>
-
-              <div class="field full">
-                <label>Password Baru (Kosongkan jika tidak ingin diubah)</label>
-                <input id="editUserPasswordVal" type="password" placeholder="Password baru...">
-              </div>
-
-              ${targetUser.role === 'Siswa' ? `
-                <div class="field full">
-                  <label>Atur Kelas & Jurusan</label>
-                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-                    <div>
-                      <small style="color:var(--muted)">Tingkat</small>
-                      <select id="editTingkatVal">
-                        ${TINGKAT_LIST.map((t) => `<option value="${t}" ${t === initTingkat ? 'selected' : ''}>${t}</option>`).join("")}
-                      </select>
-                    </div>
-                    <div>
-                      <small style="color:var(--muted)">Jurusan</small>
-                      <select id="editJurusanVal">
-                        ${JURUSAN_LIST.map((j) => `<option value="${j}" ${j === initJurusan ? 'selected' : ''}>${j}</option>`).join("")}
-                      </select>
-                    </div>
-                    <div>
-                      <small style="color:var(--muted)">Rombel (A-Z)</small>
-                      <select id="editRombelVal">
-                        ${ROMBEL_LIST.map((r) => `<option value="${r}" ${r === initRombel ? 'selected' : ''}>${r}</option>`).join("")}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ` : ''}
-
-              <div class="modal-actions full" style="margin-top:12px">
-                <button type="button" class="ghost" id="btnCancelEdit">Batal Edit</button>
-                <button type="submit" class="success">💾 Simpan Perubahan</button>
-              </div>
-            </form>
-          `;
-
-          $("#modal").classList.add("open");
-
-          // Event Listener Toggle Edit Mode
-          $("#btnEnableEdit").onclick = () => {
-            $("#userPreviewCard").classList.add("hidden");
-            $("#userEditForm").classList.remove("hidden");
-          };
-
-          $("#btnCancelEdit").onclick = () => {
-            $("#userPreviewCard").classList.remove("hidden");
-            $("#userEditForm").classList.add("hidden");
-          };
-
-          // Handle Submit Edit Form
-          $("#userEditForm").onsubmit = (e) => {
-            e.preventDefault();
-            const currentList = accounts();
-            const u = currentList.find((x) => x.id === targetUser.id);
-            if (!u) return;
-
-            const newId = $("#editUserIdVal").value.trim();
-            const newName = $("#editUserNameVal").value.trim();
-            const newPass = $("#editUserPasswordVal").value;
-
-            // Validasi ID
-            if (!/^\d+$/.test(newId) || Number(newId) < 1) {
-              toast("User ID harus berupa angka.");
-              return;
-            }
-            if (currentList.some((x) => x.id === newId && x.id !== u.id)) {
-              toast("User ID sudah digunakan akun lain.");
-              return;
-            }
-
-            // Validasi Username
-            if (currentList.some((x) => normalizedUsername(x.username) === normalizedUsername(newName) && x.id !== u.id)) {
-              toast("Nama akun sudah digunakan.");
-              return;
-            }
-
-            // Update data
-            const oldId = u.id;
-            u.id = newId;
-            u.username = newName;
-            if (newPass) u.password = newPass;
-
-            if (u.role === 'Siswa' && $("#editTingkatVal")) {
-              const t = $("#editTingkatVal").value;
-              const j = $("#editJurusanVal").value;
-              const r = $("#editRombelVal").value;
-              u.kelas = `${t} ${j} ${r}`;
-            }
-
-            save(K.accounts, currentList);
-
-            // Update ID di laporan jika berubah
-            if (oldId !== newId) {
-              save(K.reports, reports().map((report) => ({
-                ...report,
-                ownerId: report.ownerId === oldId ? newId : report.ownerId,
-                reporterId: report.reporterId === oldId ? newId : report.reporterId,
-              })));
-            }
-
-            toast("Data user berhasil diperbarui!");
-            $("#modal").classList.remove("open");
-            routeView(route, current());
-          };
-        }
-
         function openDetail(r, a) {
           const historyHtml = (r.statusHistory || [{ status: r.status, timestamp: r.updatedAt || r.createdAt, actor: r.updatedBy }])
             .map((h) => `<div><strong>${esc(h.status)}</strong><small>${h.actor ? `Oleh ${esc(h.actor)} · ` : ""}${fullDate(h.timestamp)}</small></div>`)
             .join("");
           $("#modalTitle").textContent = "Detail laporan";
           $("#modalBody").innerHTML =
-            `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small><strong>${esc(r.id)}</strong></div><div class="detail-item"><small>Dibuat</small><strong>${fullDate(r.createdAt)}</strong></div><div class="detail-item"><small>Pelapor</small><strong>${esc(r.reporterName || "Tidak tersedia")} (${esc(r.reporterType || "-")})</strong></div><div class="detail-item"><small>Status</small><strong><span class="${statusClass(r.status)}">${esc(r.status)}</span></strong></div><div class="detail-item"><small>Fasilitas</small><strong>${esc(r.facilityName)}</strong></div><div class="detail-item"><small>Lokasi</small><strong>${esc(r.location)} · ${esc(r.room)}</strong></div><div class="detail-item"><small>Tingkat urgensi</small><strong>${esc(r.urgency || "Tidak ditentukan")}</strong></div><div class="detail-item detail-full"><small>Deskripsi</small><strong>${esc(r.description)}</strong></div>${r.adminNote ? `<div class="detail-item detail-full"><small>Catatan penanganan</small><strong>${esc(r.adminNote)}</strong></div>` : ""}</div>${a.role === "Admin" || a.role === "Petugas" ? `<div class="panel" style="margin:22px 0 0"><div class="field"><label>Status laporan</label><select id="editStatus">${STATUSES.map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field" style="margin-top:12px"><label>Catatan penanganan</label><textarea id="editNote">${esc(r.adminNote || "")}</textarea></div><div class="modal-actions"><button class="primary" id="saveReport">Simpan perubahan</button></div></div>` : ""}<h3>Riwayat status</h3><div class="timeline">${historyHtml}</div><div class="modal-actions" style="margin-top:18px"><button type="button" class="ghost" id="printDetailBtn">🖨 Cetak Laporan Ini</button></div>`;
+            `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small><strong>${esc(r.id)}</strong></div><div class="detail-item"><small>Dibuat</small><strong>${fullDate(r.createdAt)}</strong></div><div class="detail-item"><small>Pelapor</small><strong>${esc(r.reporterName || "Tidak tersedia")} (${esc(r.reporterType || "- ")})</strong></div><div class="detail-item"><small>Status</small><strong><span class="${statusClass(r.status)}">${esc(r.status)}</span></strong></div><div class="detail-item"><small>Fasilitas</small><strong>${esc(r.facilityName)}</strong></div><div class="detail-item"><small>Lokasi</small><strong>${esc(r.location)} · ${esc(r.room)}</strong></div><div class="detail-item"><small>Tingkat urgensi</small><strong>${esc(r.urgency || "Tidak ditentukan")}</strong></div><div class="detail-item detail-full"><small>Deskripsi</small><strong>${esc(r.description)}</strong></div>${r.adminNote ? `<div class="detail-item detail-full"><small>Catatan penanganan</small><strong>${esc(r.adminNote)}</strong></div>` : ""}</div>${a.role === "Admin" || a.role === "Petugas" ? `<div class="panel" style="margin:22px 0 0"><div class="field"><label>Status laporan</label><select id="editStatus">${STATUSES.map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field" style="margin-top:12px"><label>Catatan penanganan</label><textarea id="editNote">${esc(r.adminNote || "")}</textarea></div><div class="modal-actions"><button class="primary" id="saveReport">Simpan perubahan</button></div></div>` : ""}<h3>Riwayat status</h3><div class="timeline">${historyHtml}</div><div class="modal-actions" style="margin-top:18px"><button type="button" class="ghost" id="printDetailBtn">🖨 Cetak Laporan Ini</button></div>`;
           $("#modal").classList.add("open");
           $("#printDetailBtn")?.addEventListener("click", () => window.print());
           if (r.photo) {
@@ -1590,7 +1344,7 @@
             proofField.style.marginTop = "12px";
             proofField.innerHTML = '<label for="completionPhoto">Foto bukti petugas (wajib saat selesai)</label><input id="completionPhoto" type="file" accept="image/*">';
             $("#editNote").parentElement.after(proofField);
-            
+            // Add "Hapus ke Sampah" button in the modal-actions area
             if (!r.archived) {
               const archiveBtn = document.createElement("button");
               archiveBtn.type = "button";
@@ -1664,7 +1418,6 @@
             routeView(location.hash.slice(1) || "dashboard", a);
           });
         }
-
         function bindView(route, a) {
           $("[data-route-action]")?.addEventListener("click", (e) =>
             navigate(e.target.dataset.routeAction),
@@ -1737,57 +1490,6 @@
           $("#printReportList")?.addEventListener("click", () => {
             window.print();
           });
-
-          // Function Export Laporan ke Excel
-          $("#exportExcelReportList")?.addEventListener("click", () => {
-            let rs = reports().filter((r) => !r.archived);
-            if (route === "mine") rs = rs.filter((r) => owner(r) === a.id);
-            if (route === "public") rs = rs.filter((r) => owner(r) !== a.id);
-
-            if (!rs.length) {
-              toast("Tidak ada data laporan untuk diekspor.");
-              return;
-            }
-
-            const formattedData = rs.map((item, index) => {
-              const repAcc = accounts().find((x) => x.id === owner(item));
-              const repKelas = repAcc && repAcc.kelas ? ` (${repAcc.kelas})` : "";
-              
-              let ditanganiInfo = "Belum Ditangani";
-              if (item.updatedBy || item.completedAt) {
-                const tgl = item.completedAt ? fullDate(item.completedAt) : (item.updatedAt ? fullDate(item.updatedAt) : "-");
-                ditanganiInfo = `${tgl} (Oleh: ${item.updatedBy || "Petugas/Admin"})`;
-              }
-
-              return {
-                "No": index + 1,
-                "Nama Pelapor": `${item.reporterName || "Siswa"}${repKelas}`,
-                "Laporan": `${item.facilityName} - ${item.description} (Lokasi: ${item.location}, Ruang: ${item.room})`,
-                "Jenis Laporan / Tingkatan": `${item.category} / Urgensi: ${item.urgency || "Sedang"}`,
-                "Kapan Dilaporkan": fullDate(item.createdAt),
-                "Kapan Ditangani": ditanganiInfo
-              };
-            });
-
-            if (typeof XLSX !== 'undefined') {
-              const worksheet = XLSX.utils.json_to_sheet(formattedData);
-              worksheet['!cols'] = [
-                { wch: 5 },   // No
-                { wch: 25 },  // Nama Pelapor
-                { wch: 45 },  // Laporan
-                { wch: 30 },  // Jenis Laporan
-                { wch: 25 },  // Kapan Dilaporkan
-                { wch: 35 }   // Kapan Ditangani
-              ];
-              const workbook = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Fasilitas");
-              XLSX.writeFile(workbook, `Laporan_Fasilitas_SIFAS_${new Date().toISOString().slice(0, 10)}.xlsx`);
-              toast("File Excel berhasil diunduh.");
-            } else {
-              toast("Gagal memuat modul Excel.");
-            }
-          });
-
           $("#exportData")?.addEventListener("click", () => {
             const backup = {
               accounts: accounts(),
@@ -1836,12 +1538,6 @@
                 if (r) openDetail(r, a);
               }),
           );
-
-          // Klik Tombol Kelola / Edit User
-          document.querySelectorAll("[data-manage-user]").forEach((b) => {
-            b.onclick = () => openUserManageModal(b.dataset.manageUser, a, route);
-          });
-
           // Trash view: restore
           document.querySelectorAll("[data-restore]").forEach((b) => {
             b.onclick = () => {
@@ -1867,7 +1563,77 @@
               };
             });
           }
-
+          document.querySelectorAll("[data-name]").forEach(
+            (i) =>
+              (i.onchange = () => {
+                const list = accounts(),
+                  x = list.find((y) => y.id === i.dataset.name);
+                if (x) {
+                  const username = i.value.trim() || x.username;
+                  if (
+                    list.some(
+                      (y) =>
+                        y.id !== x.id &&
+                        normalizedUsername(y.username) === normalizedUsername(username),
+                    )
+                  ) {
+                    i.value = x.username;
+                    toast("Nama akun sudah digunakan.");
+                    return;
+                  }
+                  x.username = username;
+                  save(K.accounts, list);
+                  toast("Nama akun diperbarui.");
+                }
+              }),
+          );
+          if (a.role === "Admin") {
+            document.querySelectorAll("[data-id]").forEach((i) => {
+              i.onchange = () => {
+                const list = accounts();
+                const account = list.find((x) => x.id === i.dataset.id);
+                const nextId = i.value.trim();
+                if (!account) return;
+                if (!/^\d+$/.test(nextId) || Number(nextId) < 1) {
+                  i.value = account.id;
+                  toast("ID user harus berupa angka positif.");
+                  return;
+                }
+                if (list.some((x) => x.id === nextId && x !== account)) {
+                  i.value = account.id;
+                  toast("ID user sudah digunakan akun lain.");
+                  return;
+                }
+                const oldId = account.id;
+                account.id = nextId;
+                save(K.accounts, list);
+                save(K.reports, reports().map((report) => ({
+                  ...report,
+                  ownerId: report.ownerId === oldId ? nextId : report.ownerId,
+                  reporterId: report.reporterId === oldId ? nextId : report.reporterId,
+                })));
+                if (sessionStorage.getItem(K.session) === oldId) {
+                  sessionStorage.setItem(K.session, nextId);
+                }
+                routeView(route, accounts().find((x) => x.id === sessionStorage.getItem(K.session)) || a);
+                toast("ID user diperbarui.");
+              };
+            });
+          }
+          document.querySelectorAll("[data-password]").forEach(
+            (i) =>
+              (i.onchange = () => {
+                if (!i.value) return;
+                const list = accounts(),
+                  x = list.find((y) => y.id === i.dataset.password);
+                if (x) {
+                  x.password = i.value;
+                  save(K.accounts, list);
+                  i.value = "";
+                  toast("Password diperbarui.");
+                }
+              }),
+          );
           document.querySelectorAll("[data-delete]").forEach(
             (b) =>
               (b.onclick = () => {
@@ -1880,9 +1646,9 @@
               }),
           );
         }
-
         function filterList(a, route) {
           let rs = reports();
+          // normal views exclude archived; trash view shows only archived
           if (route !== "trash") rs = rs.filter((r) => !r.archived);
           if (route === "mine") rs = rs.filter((r) => owner(r) === a.id);
           if (route === "public") rs = rs.filter((r) => owner(r) !== a.id);
@@ -1917,76 +1683,13 @@
               }),
           );
         }
-
-        // Modal Tambah Akun Baru (Dengan Pilihan Kelas)
         function accountModal(route) {
-          $("#modalTitle").textContent = "Tambah Akun Baru";
-          $("#modalBody").innerHTML = `
-            <form id="accountForm" class="form-grid">
-              <div class="field">
-                <label>Nama Akun / Username</label>
-                <input id="newName" required placeholder="Nama lengkap...">
-              </div>
-              <div class="field">
-                <label>Password</label>
-                <input id="newPassword" required placeholder="Password...">
-              </div>
-              <div class="field full">
-                <label>Jenis Pengguna / Role</label>
-                <select id="newRole">
-                  ${(route === "users" ? USER_ROLES : route === "staff" ? ["Petugas"] : ["Admin"]).map((x) => `<option value="${x}">${x}</option>`).join("")}
-                </select>
-              </div>
-
-              <!-- Pilihan Kelas (Tingkat, Jurusan, Rombel) -->
-              <div id="kelasSection" class="field full">
-                <label>Pilih Kelas Siswa</label>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-                  <div>
-                    <small style="color:var(--muted)">Tingkat</small>
-                    <select id="newTingkat">
-                      ${TINGKAT_LIST.map((t) => `<option value="${t}">${t}</option>`).join("")}
-                    </select>
-                  </div>
-                  <div>
-                    <small style="color:var(--muted)">Jurusan</small>
-                    <select id="newJurusan">
-                      ${JURUSAN_LIST.map((j) => `<option value="${j}">${j}</option>`).join("")}
-                    </select>
-                  </div>
-                  <div>
-                    <small style="color:var(--muted)">Rombel (A-Z)</small>
-                    <select id="newRombel">
-                      ${ROMBEL_LIST.map((r) => `<option value="${r}">${r}</option>`).join("")}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="modal-actions full">
-                <button type="button" class="ghost" id="cancelAccount">Batal</button>
-                <button class="primary">Simpan Akun</button>
-              </div>
-            </form>
-          `;
-
+          $("#modalTitle").textContent = "Tambah akun";
+          $("#modalBody").innerHTML =
+            `<form id="accountForm" class="form-grid"><div class="field"><label>Nama akun</label><input id="newName" required></div><div class="field"><label>Password</label><input id="newPassword" required></div><div class="field"><label>Jenis pengguna</label><select id="newRole">${(route === "users" ? USER_ROLES : route === "staff" ? ["Petugas"] : ["Admin"]).map((x) => `<option>${x}</option>`).join("")}</select></div><div class="modal-actions full"><button type="button" class="ghost" id="cancelAccount">Batal</button><button class="primary">Simpan akun</button></div></form>`;
           $("#modal").classList.add("open");
-
-          const roleSelect = $("#newRole");
-          const kelasSec = $("#kelasSection");
-
-          function toggleKelasView() {
-            if (roleSelect.value === "Siswa") {
-              kelasSec.classList.remove("hidden");
-            } else {
-              kelasSec.classList.add("hidden");
-            }
-          }
-          roleSelect.onchange = toggleKelasView;
-          toggleKelasView();
-
-          $("#cancelAccount").onclick = () => $("#modal").classList.remove("open");
-
+          $("#cancelAccount").onclick = () =>
+            $("#modal").classList.remove("open");
           $("#accountForm").onsubmit = (e) => {
             e.preventDefault();
             const list = accounts(),
@@ -1998,47 +1701,36 @@
                       (n) => !list.some((x) => x.adminSlot === n),
                     )
                   : null;
-
-            if (
-              list.some(
-                (x) => normalizedUsername(x.username) === normalizedUsername(username),
-              )
-            ) {
-              toast("Nama akun sudah digunakan.");
-              return;
-            }
+              if (
+                list.some(
+                  (x) => normalizedUsername(x.username) === normalizedUsername(username),
+                )
+              ) {
+                toast("Nama akun sudah digunakan.");
+                return;
+              }
             if (role === "Admin" && !slot) {
               toast("Slot Admin 2 sampai 5 sudah penuh.");
               return;
             }
-
             const clientIds = list
               .map((x) => Number(String(x.id).slice(-4)))
               .filter((id) => Number.isInteger(id) && id >= 6 && id < 100000);
             const next = role === "Admin" ? slot : Math.max(5, ...clientIds) + 1;
-
-            let kelasStr = "";
-            if (role === "Siswa") {
-              kelasStr = `${$("#newTingkat").value} ${$("#newJurusan").value} ${$("#newRombel").value}`;
-            }
-
             list.push({
               id: idFor(next),
               username,
               password: $("#newPassword").value,
               role,
-              kelas: kelasStr,
               adminSlot: role === "Admin" ? slot : null,
               active: true,
             });
-
             save(K.accounts, list);
             $("#modal").classList.remove("open");
             routeView(route, current());
             toast("Akun berhasil dibuat.");
           };
         }
-
         $("#closeModal").onclick = () => $("#modal").classList.remove("open");
         $("#modal").onclick = (e) => {
           if (e.target.id === "modal") $("#modal").classList.remove("open");
@@ -2047,11 +1739,9 @@
           const a = current();
           if (a) routeView(location.hash.slice(1) || "dashboard", a);
         });
-
         seed();
         migrateAccountIds();
-
-        // Purge sampah otomatis > 30 hari
+        // Auto-purge archived reports older than 30 days
         (function purgeOldArchives() {
           const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
           const now = Date.now();
@@ -2066,7 +1756,6 @@
             save(K.reports, cleaned);
           }
         })();
-
         login();
       })();
     </script>
