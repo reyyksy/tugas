@@ -887,7 +887,7 @@
           accounts: "sifas_accounts",
           reports: "sifas_reports",
           session: "sifas_session",
-          version: "sifas_single_version_v6",
+          version: "sifas_single_version_v5",
           accountIdFormat: "sifas_account_id_format",
         };
         const STATUSES = [
@@ -1037,7 +1037,7 @@
         }
 
         function seed() {
-          if (localStorage.getItem(K.version) !== "6") {
+          if (localStorage.getItem(K.version) !== "5") {
             save(K.accounts, [
               {
                 id: idFor(1),
@@ -1064,7 +1064,7 @@
               },
             ]);
             save(K.reports, []);
-            localStorage.setItem(K.version, "6");
+            localStorage.setItem(K.version, "5");
             sessionStorage.removeItem(K.session);
           }
         }
@@ -1107,13 +1107,6 @@
 
         function owner(r) {
           return r.ownerId || r.reporterId || "";
-        }
-
-        // Helper untuk mengambil data kelas pelapor (secara dinamis)
-        function getReporterKelas(r) {
-          if (r.reporterKelas) return r.reporterKelas;
-          const acc = accounts().find((x) => x.id === owner(r));
-          return acc && acc.kelas ? acc.kelas : "";
         }
 
         function statusClass(s) {
@@ -1279,28 +1272,11 @@
           return `<section class="view active"><div class="hero"><div><div class="eyebrow2">Ringkasan fasilitas sekolah</div><h1>Selamat datang, ${esc(a.username)}.</h1><p>Pantau kondisi fasilitas dan tindak lanjut laporan dari satu ruang kerja.</p></div>${a.role !== "Admin" && a.role !== "Petugas" ? '<div class="hero-actions"><button class="primary" data-route-action="create">+ Buat laporan</button></div>' : ""}</div><div class="stats"><div class="stat"><span>Total laporan</span><strong>${rs.length}</strong></div><div class="stat"><span>Menunggu</span><strong>${count("Menunggu")}</strong></div><div class="stat"><span>Diproses</span><strong>${count("Diproses")}</strong></div><div class="stat"><span>Selesai</span><strong>${count("Selesai")}</strong></div></div><div class="panel"><h2>Ringkasan fasilitas sekolah</h2><p style="margin:0;color:var(--muted)">${rs.length ? `${rs.length} laporan tercatat pada perangkat ini.` : "Belum ada laporan fasilitas yang tercatat."} Gunakan menu laporan untuk melihat detail dan tindak lanjut.</p></div></section>`;
         }
 
-        // Tampilan Kartu Laporan (Menampilkan Nama Pelapor + Kelas)
         function card(r) {
           const proof = r.completionPhoto
             ? `<img class="card-photo" src="${esc(r.completionPhoto)}" alt="Foto bukti petugas">`
             : "";
-          
-          const kelasInfo = getReporterKelas(r);
-          const pelaporTag = `${esc(r.reporterName || "Pelapor")}${kelasInfo ? ` (${esc(kelasInfo)})` : ` (${esc(r.reporterType || "-")})`}`;
-
-          return `<article class="report-card">
-            <div class="report-main">
-              <strong>${esc(r.facilityName)}</strong>
-              <small>${esc(r.id)} · ${esc(r.location)}</small>
-              <small style="color:var(--blue);font-weight:700;margin-top:4px;display:block;">👤 ${pelaporTag}</small>
-              ${proof}
-            </div>
-            <div class="meta"><small>Kategori</small>${esc(r.category)}</div>
-            <div class="meta"><small>Tanggal</small>${date(r.createdAt)}</div>
-            <div class="meta"><small>Urgensi</small><strong>${esc(r.urgency || "-")}</strong></div>
-            <div class="meta"><small>Status</small><span class="${statusClass(r.status)}">${esc(r.status)}</span></div>
-            <button class="ghost" data-detail="${esc(r.id)}">Detail</button>
-          </article>`;
+          return `<article class="report-card"><div class="report-main"><strong>${esc(r.facilityName)}</strong><small>${esc(r.id)} · ${esc(r.location)}</small>${proof}</div><div class="meta"><small>Kategori</small>${esc(r.category)}</div><div class="meta"><small>Tanggal</small>${date(r.createdAt)}</div><div class="meta"><small>Urgensi</small><strong>${esc(r.urgency || "-")}</strong></div><div class="meta"><small>Status</small><span class="${statusClass(r.status)}">${esc(r.status)}</span></div><button class="ghost" data-detail="${esc(r.id)}">Detail</button></article>`;
         }
 
         function createView() {
@@ -1311,7 +1287,7 @@
           let rs = reports().filter((r) => !r.archived);
           if (mode === "mine") rs = rs.filter((r) => owner(r) === a.id);
           if (mode === "public") rs = rs.filter((r) => owner(r) !== a.id);
-          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">${mode === "mine" ? "Riwayat pribadi" : mode === "public" ? "Informasi sekolah" : "Pusat penanganan"}</div><h1>${mode === "mine" ? "Laporan Saya" : mode === "public" ? "Laporan Sekolah" : "Laporan Masuk"}</h1><p>${mode === "mine" ? "Lihat perkembangan laporan yang dibuat oleh akun Anda." : mode === "public" ? "Lihat laporan fasilitas pengguna lain beserta identitas pelapor dan kelasnya." : "Periksa dan tindak lanjuti seluruh laporan yang masuk."}</p></div></div><div class="toolbar"><input id="search" placeholder="Cari fasilitas, lokasi, pelapor, kelas..."><select id="filterStatus"><option value="">Semua status</option>${STATUSES.map((s) => `<option>${s}</option>`).join("")}</select><select id="filterCategory"><option value="">Semua kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select><select id="filterUrgency"><option value="">Semua urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select><button class="ghost" id="resetFilter">Reset</button><button class="ghost" id="printReportList" title="Cetak daftar laporan">🖨 Cetak</button><button class="success" id="exportExcelReportList" title="Export Laporan ke Excel">📊 Export Excel</button></div><div id="results" class="report-list">${renderCards(rs)}</div></section>`;
+          return `<section class="view active"><div class="hero"><div><div class="eyebrow2">${mode === "mine" ? "Riwayat pribadi" : mode === "public" ? "Informasi sekolah" : "Pusat penanganan"}</div><h1>${mode === "mine" ? "Laporan Saya" : mode === "public" ? "Laporan Sekolah" : "Laporan Masuk"}</h1><p>${mode === "mine" ? "Lihat perkembangan laporan yang dibuat oleh akun Anda." : mode === "public" ? "Lihat laporan fasilitas pengguna lain tanpa mengubah datanya." : "Periksa dan tindak lanjuti seluruh laporan yang masuk."}</p></div></div><div class="toolbar"><input id="search" placeholder="Cari fasilitas, lokasi, pelapor..."><select id="filterStatus"><option value="">Semua status</option>${STATUSES.map((s) => `<option>${s}</option>`).join("")}</select><select id="filterCategory"><option value="">Semua kategori</option>${CATEGORIES.map((c) => `<option>${c}</option>`).join("")}</select><select id="filterUrgency"><option value="">Semua urgensi</option>${URGENCIES.map((u) => `<option>${u}</option>`).join("")}</select><button class="ghost" id="resetFilter">Reset</button><button class="ghost" id="printReportList" title="Cetak daftar laporan">🖨 Cetak</button><button class="success" id="exportExcelReportList" title="Export Laporan ke Excel">📊 Export Excel</button></div><div id="results" class="report-list">${renderCards(rs)}</div></section>`;
         }
 
         function renderCards(rs) {
@@ -1575,18 +1551,13 @@
           };
         }
 
-        // Modal Detail Laporan (Menampilkan Info Pelapor & Kelas)
         function openDetail(r, a) {
           const historyHtml = (r.statusHistory || [{ status: r.status, timestamp: r.updatedAt || r.createdAt, actor: r.updatedBy }])
             .map((h) => `<div><strong>${esc(h.status)}</strong><small>${h.actor ? `Oleh ${esc(h.actor)} · ` : ""}${fullDate(h.timestamp)}</small></div>`)
             .join("");
-
-          const kelasInfo = getReporterKelas(r);
-          const pelaporDetail = `${esc(r.reporterName || "Tidak tersedia")}${kelasInfo ? ` (${esc(kelasInfo)})` : ` (${esc(r.reporterType || "-")})`}`;
-
-          $("#modalTitle").textContent = "Detail Laporan";
+          $("#modalTitle").textContent = "Detail laporan";
           $("#modalBody").innerHTML =
-            `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small><strong>${esc(r.id)}</strong></div><div class="detail-item"><small>Dibuat</small><strong>${fullDate(r.createdAt)}</strong></div><div class="detail-item"><small>Pelapor & Kelas</small><strong>${pelaporDetail}</strong></div><div class="detail-item"><small>Status</small><strong><span class="${statusClass(r.status)}">${esc(r.status)}</span></strong></div><div class="detail-item"><small>Fasilitas</small><strong>${esc(r.facilityName)}</strong></div><div class="detail-item"><small>Lokasi</small><strong>${esc(r.location)} · ${esc(r.room)}</strong></div><div class="detail-item"><small>Tingkat urgensi</small><strong>${esc(r.urgency || "Tidak ditentukan")}</strong></div><div class="detail-item detail-full"><small>Deskripsi</small><strong>${esc(r.description)}</strong></div>${r.adminNote ? `<div class="detail-item detail-full"><small>Catatan penanganan</small><strong>${esc(r.adminNote)}</strong></div>` : ""}</div>${a.role === "Admin" || a.role === "Petugas" ? `<div class="panel" style="margin:22px 0 0"><div class="field"><label>Status laporan</label><select id="editStatus">${STATUSES.map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field" style="margin-top:12px"><label>Catatan penanganan</label><textarea id="editNote">${esc(r.adminNote || "")}</textarea></div><div class="modal-actions"><button class="primary" id="saveReport">Simpan perubahan</button></div></div>` : ""}<h3>Riwayat status</h3><div class="timeline">${historyHtml}</div><div class="modal-actions" style="margin-top:18px"><button type="button" class="ghost" id="printDetailBtn">🖨 Cetak Laporan Ini</button></div>`;
+            `<div class="detail-grid"><div class="detail-item"><small>ID laporan</small><strong>${esc(r.id)}</strong></div><div class="detail-item"><small>Dibuat</small><strong>${fullDate(r.createdAt)}</strong></div><div class="detail-item"><small>Pelapor</small><strong>${esc(r.reporterName || "Tidak tersedia")} (${esc(r.reporterType || "-")})</strong></div><div class="detail-item"><small>Status</small><strong><span class="${statusClass(r.status)}">${esc(r.status)}</span></strong></div><div class="detail-item"><small>Fasilitas</small><strong>${esc(r.facilityName)}</strong></div><div class="detail-item"><small>Lokasi</small><strong>${esc(r.location)} · ${esc(r.room)}</strong></div><div class="detail-item"><small>Tingkat urgensi</small><strong>${esc(r.urgency || "Tidak ditentukan")}</strong></div><div class="detail-item detail-full"><small>Deskripsi</small><strong>${esc(r.description)}</strong></div>${r.adminNote ? `<div class="detail-item detail-full"><small>Catatan penanganan</small><strong>${esc(r.adminNote)}</strong></div>` : ""}</div>${a.role === "Admin" || a.role === "Petugas" ? `<div class="panel" style="margin:22px 0 0"><div class="field"><label>Status laporan</label><select id="editStatus">${STATUSES.map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="field" style="margin-top:12px"><label>Catatan penanganan</label><textarea id="editNote">${esc(r.adminNote || "")}</textarea></div><div class="modal-actions"><button class="primary" id="saveReport">Simpan perubahan</button></div></div>` : ""}<h3>Riwayat status</h3><div class="timeline">${historyHtml}</div><div class="modal-actions" style="margin-top:18px"><button type="button" class="ghost" id="printDetailBtn">🖨 Cetak Laporan Ini</button></div>`;
           $("#modal").classList.add("open");
           $("#printDetailBtn")?.addEventListener("click", () => window.print());
           if (r.photo) {
@@ -1724,7 +1695,6 @@
               reporterId: a.id,
               reporterName: a.username,
               reporterType: a.role,
-              reporterKelas: a.kelas || "",
               category: $("#category").value,
               facilityName: $("#facility").value.trim(),
               location: $("#location").value.trim(),
@@ -1768,7 +1738,7 @@
             window.print();
           });
 
-          // Export Laporan ke Excel
+          // Function Export Laporan ke Excel
           $("#exportExcelReportList")?.addEventListener("click", () => {
             let rs = reports().filter((r) => !r.archived);
             if (route === "mine") rs = rs.filter((r) => owner(r) === a.id);
@@ -1780,8 +1750,8 @@
             }
 
             const formattedData = rs.map((item, index) => {
-              const kelasStr = getReporterKelas(item);
-              const repKelas = kelasStr ? ` (${kelasStr})` : "";
+              const repAcc = accounts().find((x) => x.id === owner(item));
+              const repKelas = repAcc && repAcc.kelas ? ` (${repAcc.kelas})` : "";
               
               let ditanganiInfo = "Belum Ditangani";
               if (item.updatedBy || item.completedAt) {
@@ -1803,7 +1773,7 @@
               const worksheet = XLSX.utils.json_to_sheet(formattedData);
               worksheet['!cols'] = [
                 { wch: 5 },   // No
-                { wch: 28 },  // Nama Pelapor
+                { wch: 25 },  // Nama Pelapor
                 { wch: 45 },  // Laporan
                 { wch: 30 },  // Jenis Laporan
                 { wch: 25 },  // Kapan Dilaporkan
@@ -1928,7 +1898,6 @@
                   r.facilityName,
                   r.location,
                   r.reporterName,
-                  getReporterKelas(r),
                   r.description,
                 ].some((v) =>
                   String(v || "")
@@ -1949,7 +1918,7 @@
           );
         }
 
-        // Modal Tambah Akun Baru
+        // Modal Tambah Akun Baru (Dengan Pilihan Kelas)
         function accountModal(route) {
           $("#modalTitle").textContent = "Tambah Akun Baru";
           $("#modalBody").innerHTML = `
@@ -1969,7 +1938,7 @@
                 </select>
               </div>
 
-              <!-- Pilihan Kelas Siswa -->
+              <!-- Pilihan Kelas (Tingkat, Jurusan, Rombel) -->
               <div id="kelasSection" class="field full">
                 <label>Pilih Kelas Siswa</label>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
